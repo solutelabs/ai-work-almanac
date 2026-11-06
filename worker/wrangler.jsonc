@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Your Worker's name. Wrangler picks the Cloudflare account from `wrangler login`; to pin one, add
+  // "account_id": "<your Cloudflare account ID>".
+  "name": "pulse-tracker",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-02",
+  "compatibility_flags": ["nodejs_compat"],
+  "rules": [
+    { "type": "Text", "globs": ["**/*.html", "**/*.py"], "fallthrough": true },
+    { "type": "Data", "globs": ["**/*.woff2"], "fallthrough": true }
+  ],
+  // To serve it on your own domain, add for example:
+  // "routes": [{ "pattern": "pulse.example.com", "custom_domain": true }],
+  "vars": {
+    // GitHub orgs whose members may enroll a laptop, comma separated.
+    "ALLOWED_ORGS": "your-org",
+    // Client ID of your GitHub OAuth App, with Device Flow turned on. No client secret is needed.
+    "GITHUB_CLIENT_ID": "Iv1.0000000000000000",
+    // Emails that may read prompt text on the dashboard. Keep it to the people your install notice names.
+    "PROMPT_READERS": "asha.rao@example.com",
+    // The dashboard's public address, used in the weekly digest and sign-in messages.
+    "DASHBOARD_URL": "https://pulse.example.com/dashboard",
+    // Your Cloudflare Zero Trust team name, from <team>.cloudflareaccess.com.
+    "ACCESS_TEAM": "example-team",
+    // The Access application's Audience (AUD) tag. Empty means no Google sign-in: the dashboard then asks
+    // for the DASHBOARD_PASSWORD secret instead.
+    "ACCESS_AUD": ""
+  },
+  // Replace with the id from `wrangler hyperdrive create`. See the README.
+  "hyperdrive": [{ "binding": "HYPERDRIVE", "id": "00000000000000000000000000000000", "localConnectionString": "postgres://tracker_app:local@localhost:5432/pulse_dev" }],
+  // Captured prompts and responses. Private, with a 90-day lifecycle rule set on the bucket. Use your own bucket name.
+  "r2_buckets": [{ "binding": "CAPTURE", "bucket_name": "pulse-tracker-capture" }],
+  "triggers": { "crons": ["*/15 * * * *", "0 4 * * 1"] },
+  "observability": { "enabled": true }
+}

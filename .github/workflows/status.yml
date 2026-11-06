@@ -1,0 +1,33 @@
+name: Weekly status
+# Posts the weekly Pulse status to Slack. The Worker starts this every Monday with its digest cron,
+# because GitHub's own schedule never fired for this repo. To send one now: gh workflow run status.yml
+# It holds no names of people.
+#
+# Required repo secret (Settings > Secrets and variables > Actions):
+#   SLACK_STATUS_WEBHOOK  incoming webhook for the private status channel
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+# A manual run and the Monday run shouldn't both post.
+concurrency:
+  group: weekly-status
+  cancel-in-progress: false
+
+jobs:
+  status:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/weekly_status.py
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SLACK_STATUS_WEBHOOK: ${{ secrets.SLACK_STATUS_WEBHOOK }}

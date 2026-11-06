@@ -1,0 +1,59 @@
+name: Collector
+# The collector runs on people's own laptops and can't be patched without them re-installing, so it's tested
+# on each OS it runs on. Only when it could be affected, because macOS minutes cost more.
+on:
+  pull_request:
+    branches: [main, develop]
+    paths: &paths
+      - "collector/**"
+      - "worker/src/validate.js"
+      - "worker/test/contract.test.js"
+      - ".github/workflows/collector.yml"
+  push:
+    branches: [main, develop]
+    paths: *paths
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.name }}, Python ${{ matrix.python }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false # one OS failing shouldn't hide what the others would show
+      matrix:
+        include:
+          - { name: Linux x64, runner: ubuntu-24.04, python: "3.9" }
+          - { name: Linux x64, runner: ubuntu-24.04, python: "3.14" }
+          - { name: Linux ARM, runner: ubuntu-24.04-arm, python: "3.14" }
+          - { name: Windows, runner: windows-2025, python: "3.9" }
+          - { name: Windows, runner: windows-2025, python: "3.14" }
+          - { name: macOS, runner: macos-latest, python: "3.9" } # what macOS ships
+          - { name: macOS, runner: macos-latest, python: "3.14" }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Unit and stress tests
+        working-directory: collector
+        run: python -m unittest -b test_collect test_stress
+      - name: The server accepts anything the collector can send
+        working-directory: worker
+        env:
+          PYTHON: python
+        run: node --test test/contract.test.js
+      - name: Real install through this OS's scheduler
+        working-directory: collector
+        env:
+          COLLECTOR_REAL_INSTALL: "1"
+        run: python -m unittest -v test_stress.RealInstall

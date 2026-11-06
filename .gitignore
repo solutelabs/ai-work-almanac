@@ -1,0 +1,7 @@
+# Holds developer names and repo names
+report*.html
+__pycache__/
+node_modules/
+.wrangler/
+.dev.vars
+worker/dev/demo/dist/

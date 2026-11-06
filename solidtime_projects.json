@@ -1,0 +1,12 @@
+{
+  "Example Client App": [
+    "your-org/example-app",
+    "globex/example-app-ios"
+  ],
+  "Example Client App - Support": [
+    "your-org/example-app"
+  ],
+  "Bluebird Booking": [
+    "your-org/bluebird-booking"
+  ]
+}

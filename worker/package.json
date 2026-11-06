@@ -1,0 +1,22 @@
+{
+  "name": "worker",
+  "version": "1.0.0",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --test",
+    "dev": "wrangler dev --env-file dev/local.vars",
+    "db:reset": "bash dev/reset-db.sh",
+    "db:copy": "python3 dev/copy-prod.py",
+    "demo": "node dev/demo/build.mjs"
+  },
+  "type": "module",
+  "devDependencies": {
+    "wrangler": "^4.156.1"
+  },
+  "private": true,
+  "dependencies": {
+    "postgres": "^4.0.0"
+  }
+}

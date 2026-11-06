@@ -1,0 +1,69 @@
+name: Git upload
+# Refreshes the dashboard's commit and PR data. The Worker starts this every 15 minutes, because
+# GitHub's own schedule never fired for this repo. It reads GitHub's API and needs no clones, so a
+# fresh runner is fine.
+#
+# Required repo secrets (Settings > Secrets and variables > Actions):
+#   TRACKER_GITHUB_TOKEN  read access to the org's repos and PRs
+#   TRACKER_ADMIN_TOKEN   the Worker's ADMIN_TOKEN
+#   SOLIDTIME_TOKEN       solidtime API token from an Admin or Owner, to read everyone's logged time
+#
+# Repo variables: TRACKER_URL, your Worker's address such as https://pulse.example.com, and
+# TRACKER_ORG, the GitHub org whose repos are read.
+on:
+  workflow_dispatch:
+    inputs:
+      commit_days:
+        description: Days of commit detail to refresh. Use 90 to fill in history.
+        default: "3"
+
+permissions:
+  contents: read
+
+# A slow run shouldn't overlap the next one, because each upload replaces the data.
+concurrency:
+  group: git-upload
+  cancel-in-progress: false
+
+jobs:
+  upload:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Upload git history
+        env:
+          GH_TOKEN: ${{ secrets.TRACKER_GITHUB_TOKEN }}
+          TRACKER_ORG: ${{ vars.TRACKER_ORG }}
+          TRACKER_ADMIN_TOKEN: ${{ secrets.TRACKER_ADMIN_TOKEN }}
+          SOLIDTIME_TOKEN: ${{ secrets.SOLIDTIME_TOKEN }}
+          COMMIT_DAYS: ${{ inputs.commit_days || '3' }}
+        run: python tracker.py --from-api --out "$RUNNER_TEMP/report.html" --commit-days "$COMMIT_DAYS" --upload "${{ vars.TRACKER_URL }}"
+
+  # Checks the live site and keeps one `live-check` issue open while it fails. A separate job, so
+  # nothing in it can stop or fail the upload. It exits 0 once the issue is synced, so a red job means
+  # the check itself crashed.
+  live-check:
+    needs: upload
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check the live site
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TRACKER_URL: ${{ vars.TRACKER_URL }}
+          TRACKER_ADMIN_TOKEN: ${{ secrets.TRACKER_ADMIN_TOKEN }}
+        run: python scripts/live_check.py --issue

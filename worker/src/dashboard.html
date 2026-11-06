@@ -1,0 +1,1272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pulse</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23141210'/%3E%3Crect x='6' y='17' width='5' height='9' fill='%23f6f6f2'/%3E%3Crect x='13.5' y='11' width='5' height='15' fill='%23f6f6f2'/%3E%3Crect x='21' y='6' width='5' height='20' fill='%23e8a317'/%3E%3C/svg%3E">
+<style>
+@font-face { font-family: "Archivo Narrow"; src: url("/fonts/archivo-narrow.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Archivo"; src: url("/fonts/archivo.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+:root {
+  color-scheme: light;
+  --paper: #f6f6f2; --ink: #141210; --ink-2: #55504a; --rule: rgba(20,18,16,.3); --hover: rgba(20,18,16,.06);
+  --vermilion: #c81f18; --saffron: 232,163,23;
+  --narrow: "Archivo Narrow", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+::selection { background: var(--ink); color: var(--paper); }
+html { scrollbar-color: var(--ink-2) transparent; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.4 Archivo, -apple-system, "Segoe UI", sans-serif; font-variant-numeric: tabular-nums; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+a { color: inherit; text-underline-offset: 2px; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+
+header.top { display: flex; flex-wrap: wrap; gap: .75rem 2rem; justify-content: space-between; align-items: flex-end; padding: 16px 32px; border-bottom: 3px solid var(--ink); }
+h1 { margin: 0; font: 700 26px/1.1 var(--narrow); letter-spacing: -.005em; }
+.filters { display: flex; flex-wrap: wrap; gap: .5rem .75rem; }
+.filters label { display: grid; gap: 2px; font-size: 12px; color: var(--ink-2); }
+select { font: inherit; font-size: 14px; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 0; padding: 5px 8px; min-width: 8.5rem; max-width: 15rem; }
+select:hover { background: var(--hover); }
+
+.range { display: flex; flex-wrap: wrap; gap: .25rem 1rem; align-items: baseline; margin-bottom: 14px; }
+.range .link { margin-left: auto; }
+.range h2 { margin: 0; font: 700 34px/1.05 var(--narrow); }
+.range p { margin: 0; color: var(--ink-2); }
+.dow, .weeks { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.dow div { font: 600 13px var(--narrow); padding: 3px 8px; border-bottom: 2px solid var(--ink); }
+.dow div:first-child { color: var(--vermilion); }
+.day { position: relative; min-height: 112px; min-width: 0; padding: 6px 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; width: 100%; overflow: hidden; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); transition: background-color 180ms ease-out; }
+.weeks > :nth-child(7n) { border-right: 0; }
+button.day:hover { box-shadow: inset 0 0 0 1px var(--ink); }
+.day[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
+.num { font: 700 38px/1 var(--narrow); }
+.num small { display: inline; margin-left: 4px; font: 600 13px/1.1 var(--narrow); }
+.sun .num { color: var(--vermilion); }
+.quiet .num { color: rgba(20,18,16,.32); }
+.sun.quiet .num { color: rgba(200,31,24,.42); }
+.facts { font-size: 11.5px; line-height: 1.35; white-space: nowrap; }
+.day-prompts { font-size: 12px; white-space: nowrap; }
+.day-prompts b { font-weight: 600; }
+.today .num { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 3px; }
+.compact .day { min-height: 46px; padding: 3px 6px; flex-direction: row; justify-content: space-between; align-items: flex-end; }
+.compact .num { font-size: 24px; }
+.compact .num small { display: inline; font-size: 11px; margin-left: 3px; }
+.compact .facts { display: none; }
+.key { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: var(--ink-2); font-size: 12px; }
+.key i { width: 90px; height: 10px; background: linear-gradient(to right, rgba(var(--saffron), 0), rgba(var(--saffron), .85)); border: 1px solid var(--rule); }
+
+h3 { margin: 0 0 6px; font: 700 21px/1.15 var(--narrow); }
+.person { display: grid; gap: 1px; width: 100%; padding: 9px 8px; margin: 0 -8px; width: calc(100% + 16px); border-top: 1px solid var(--rule); }
+button.person:hover { background: var(--hover); }
+.person[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.person[aria-pressed="true"] .sub { color: var(--paper); }
+.person b { font-size: 15px; font-weight: 600; }
+.sub { color: var(--ink-2); font-size: 13px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
+.tile { display: grid; align-content: start; gap: 2px; padding: 10px 14px; border-left: 1px solid var(--rule); min-width: 0; }
+.tile:first-child { border-left: 0; padding-left: 0; }
+.tile-label { font: 600 13px var(--narrow); }
+.tile b { font: 700 34px/1.05 var(--narrow); }
+.tile b.alert { color: var(--vermilion); }
+.attention { margin: 0; padding: 0; list-style: none; }
+.attention > li { display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+.attention > li > b { font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 0 12px; margin: 0; padding: 0; list-style: none; }
+.link { text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+.link:hover { text-decoration-color: var(--ink); }
+.days { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.days.open { grid-template-columns: minmax(0, 1fr) 360px; }
+details { border-top: 1px solid var(--ink); }
+details:last-of-type { border-bottom: 1px solid var(--ink); }
+summary { cursor: pointer; padding: 10px 0; font: 700 19px var(--narrow); }
+details > div { padding-bottom: 20px; display: grid; gap: 22px; }
+.folds { display: block; }
+dl { margin: 0; display: grid; grid-template-columns: max-content minmax(0, 72ch); gap: 6px 18px; }
+dt { font-weight: 600; }
+dd { margin: 0; color: var(--ink-2); }
+.detail { padding-left: 18px; border-left: 1px solid var(--ink); }
+.detail-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.detail-head button { text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
+.detail .person { margin: 0; width: 100%; padding: 7px 0; }
+
+.below { padding: 26px 32px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 34px; max-width: 1500px; }
+.below h2 { margin: 0 0 4px; font: 700 26px/1.1 var(--narrow); }
+.harness { margin: 0; padding: 0; list-style: none; }
+.dot { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 50%; }
+.dot.green { background: #16803c; }
+.dot.red { background: var(--vermilion); }
+.dot.grey { background: #a8a29e; }
+.note { margin: 2px 0 8px; color: var(--ink-2); font-size: 13px; max-width: 80ch; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 6px 10px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--rule); }
+th:first-child, td:first-child { padding-left: 0; }
+th:first-child, td:first-child { position: sticky; left: 0; background: var(--paper); }
+thead th { font: 600 13px var(--narrow); vertical-align: bottom; border-bottom: 2px solid var(--ink); }
+tbody tr:hover { background: var(--hover); }
+.n { text-align: right; }
+td.wrap, th.wrap { white-space: normal; min-width: 11rem; max-width: 22rem; }
+.tip { display: inline-block; width: 16px; height: 16px; margin-left: 4px; border: 1px solid var(--ink-2); border-radius: 50%; font: 600 11px/14px Archivo, sans-serif; text-align: center; color: var(--ink-2); position: relative; }
+.tip::after { content: ""; position: absolute; inset: -8px; }
+.tip:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.tip-text { position: fixed; inset: auto; margin: 0; width: 280px; padding: 8px 10px; background: var(--ink); color: var(--paper); border: 0; font: 400 13px/1.35 Archivo, sans-serif; white-space: normal; text-align: left; }
+th.hour, td.hour { padding: 2px 1px; width: 30px; min-width: 30px; font-size: 11px; text-align: center; }
+.prompt-view { margin: 12px 0 18px; padding: 12px 14px; border: 1px solid var(--ink); }
+.detail details, .detail details:last-of-type { border: 0; margin-top: 4px; }
+.detail summary { padding: 2px 0; font: 600 13px Archivo, sans-serif; }
+.detail details > div { padding: 6px 0 4px; }
+.lanes { display: grid; grid-template-columns: 44px repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lane-title { height: 24px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.lane-track { position: relative; height: 480px; background: repeating-linear-gradient(to bottom, var(--rule) 0 1px, transparent 1px 60px); }
+.hours-lane .lane-track { background: none; }
+.hour-label { position: absolute; left: 0; margin-top: -7px; font-size: 11px; color: var(--ink-2); }
+.lane-track .typed, .lane-track .run { position: absolute; left: 0; right: 0; min-height: 2px; }
+.lane-track .typed { background: rgb(var(--saffron)); }
+.lane-track .run { background: rgba(var(--saffron), .35); }
+.lane-track .commit { position: absolute; left: 0; right: 0; height: 2px; background: var(--ink); }
+.stretches { margin: 16px 0 0; padding: 0; list-style: none; font-size: 12.5px; }
+.stretches li { padding: 3px 0; border-top: 1px solid var(--rule); }
+.stretches b { font-weight: 600; }
+.sub.compare { color: var(--ink); font-weight: 600; }
+.prompt { padding: 10px 0; border-top: 1px solid var(--rule); }
+.prompt-text { margin-top: 3px; max-height: 22em; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+td.timeline-cell, th.timeline-cell { width: 45%; min-width: 360px; }
+.timeline { position: relative; height: 18px; background: repeating-linear-gradient(to right, var(--hover) 0 1px, transparent 1px calc(100% / 24)); }
+.timeline span { position: absolute; top: 0; bottom: 0; }
+.timeline .run, .swatch.run { background: rgba(var(--saffron), .35); }
+.timeline .typed, .swatch.typed { background: rgb(var(--saffron)); min-width: 2px; }
+.timeline .commit, .swatch.commit { background: var(--ink); width: 2px; }
+.timeline-axis { position: relative; height: 16px; }
+.timeline-axis span { position: absolute; font-weight: 400; }
+.swatch { display: inline-block; width: 12px; height: 12px; }
+.swatch.commit { width: 2px; }
+.key .swatch:not(:first-child) { margin-left: 10px; }
+td.hour div { height: 22px; outline: 1px solid var(--hover); outline-offset: -1px; }
+.warn { color: var(--vermilion); display: inline-flex; gap: .3rem; align-items: center; white-space: normal; }
+.warn svg { width: 14px; height: 14px; flex: none; }
+.loading { opacity: .55; transition: opacity 150ms ease-out; }
+.message { padding: 2rem 32px; max-width: 65ch; font-size: 16px; }
+.message.error { color: var(--vermilion); }
+code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--hover); padding: .1rem .3rem; }
+
+@media (max-width: 1040px) {
+  .days.open { grid-template-columns: minmax(0, 1fr); }
+  .detail { padding-left: 0; border-left: 0; }
+}
+@media (max-width: 720px) {
+  header.top, .below { padding-left: 16px; padding-right: 16px; }
+  .filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); width: 100%; }
+  select { width: 100%; min-width: 0; }
+  .range h2 { font-size: 30px; }
+  .day { min-height: 56px; padding: 4px; }
+  .num { font-size: 26px; }
+  .facts, .day-prompts span { display: none; }
+  .dow div { padding: 3px 4px; }
+  dl { grid-template-columns: minmax(0, 1fr); }
+  dd { margin-bottom: 8px; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Pulse</h1>
+  <div class="filters">
+    <label>Period
+      <select id="days">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="0">All time</option>
+      </select>
+    </label>
+    <label>Tool <select id="tool"></select></label>
+    <label>Model <select id="model"></select></label>
+    <label>Project <select id="repo"></select></label>
+    <label>Person <select id="developer"></select></label>
+  </div>
+</header>
+<main id="content" aria-live="polite"><p class="message">Loading…</p></main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const TOOL_LABEL = { "claude-code": "Claude Code", codex: "Codex" };
+const toolLabel = (t) => TOOL_LABEL[t] ?? t;
+const number = (n) => (n === null || n === undefined ? "–" : Number(n).toLocaleString());
+const percent = (part, whole) => (whole ? Math.round((100 * part) / whole) + "%" : "–");
+const compact = (n) => new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(n);
+const hours = (n) => `${n < 10 ? n.toFixed(1) : Math.round(n).toLocaleString()} h`;
+const plural = (n, word) => `${number(n)} ${word}${n === 1 ? "" : "s"}`;
+const people = (n) => `${number(n)} ${n === 1 ? "person" : "people"}`;
+// Your org's repos show the short name; others keep their org so client and personal repos stand out.
+const repoName = (r) => (r === "-/no-repo" ? "No repo" : r.startsWith("your-org/") ? r.split("/").pop() : r);
+const COMPACT_WEEKS = 6, REFRESH_MS = 5 * 60000, GIT_STALE_MS = 2 * 3600000;
+const stamp = (at) => `${new Date(at).toLocaleString(undefined, { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })} IST`;
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const utc = (day) => new Date(day + "T00:00:00Z");
+const iso = (date) => date.toISOString().slice(0, 10);
+const istToday = () => iso(new Date(Date.now() + 5.5 * 3600000));
+const formatDay = (day, options) => utc(day).toLocaleDateString("en-GB", { timeZone: "UTC", ...options });
+
+// Built with DOM calls, never innerHTML: names and repos come from laptops and commit history.
+function el(tag, props = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(props)) {
+    if (key === "class") node.className = value;
+    else if (key === "onclick") node.addEventListener("click", value);
+    else node.setAttribute(key, value);
+  }
+  node.append(...children.flat(Infinity).filter((c) => c !== null && c !== undefined && c !== false));
+  return node;
+}
+function warningIcon() {
+  const ns = "http://www.w3.org/2000/svg";
+  const icon = document.createElementNS(ns, "svg");
+  icon.setAttribute("viewBox", "0 0 16 16");
+  icon.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS(ns, "path");
+  for (const [k, v] of Object.entries({ d: "M8 1.5 15 14H1L8 1.5Zm0 4.5v4m0 2v.5", fill: "none", stroke: "currentColor", "stroke-width": "1.5", "stroke-linejoin": "round", "stroke-linecap": "round" })) path.setAttribute(k, v);
+  icon.append(path);
+  return icon;
+}
+
+// hours:start. Kept as plain functions so worker/test/hours.test.js can run them.
+const DAY_MS = 86400000, STUCK_DAYS = 7;
+const SLOT_HOURS = 5 / 60;
+const slotBits = (list) => (list ?? "").split(",").filter(Boolean).reduce((all, hex) => all | BigInt("0x" + hex), 0n);
+const countSlots = (text) => text.replace(/0/g, "").length;
+// Prompts up to 15 minutes apart count as one stretch of attention: someone is reading and thinking between them.
+const handsOnSlots = (bits) => countSlots(bits.toString(2).replace(/(?<=1)0{1,2}(?=1)/g, (gap) => "1".repeat(gap.length)));
+// One person's minutes count once however many sessions overlap, then people add up.
+function timeBy(rows, keyOf) {
+  const cells = new Map();
+  for (const u of rows) {
+    if (!u.active) continue;
+    const id = `${keyOf(u)}\n${u.developer}\n${u.day}`;
+    const cell = cells.get(id) ?? cells.set(id, { key: keyOf(u), active: 0n, prompted: 0n, prompts: 0, seen: 0n, parallel: 0n, folders: new Map() }).get(id);
+    cell.active |= slotBits(u.active);
+    cell.prompted |= slotBits(u.prompted);
+    cell.prompts += u.prompts ?? 0;
+    const folders = (u.folders ?? "").split(",").filter(Boolean);
+    folders.forEach((folder) => { if (!cell.folders.has(folder)) cell.folders.set(folder, 0n); });
+    // A session that moved between folders still did one thing at a time, so it counts under its first.
+    if (folders.length) cell.folders.set(folders[0], cell.folders.get(folders[0]) | slotBits(u.active));
+  }
+  const totals = new Map();
+  for (const cell of cells.values()) {
+    const total = totals.get(cell.key) ?? totals.set(cell.key, { running: 0, handsOn: 0, prompts: 0, parallel: 0, worktrees: new Set(), folders: new Set() }).get(cell.key);
+    const running = countSlots(cell.active.toString(2));
+    total.running += running * SLOT_HOURS;
+    total.handsOn += Math.min(handsOnSlots(cell.prompted), running) * SLOT_HOURS;
+    total.prompts += cell.prompts;
+    // Blocks where two or more separate folders had AI activity at once.
+    for (const [folder, bits] of cell.folders) {
+      cell.parallel |= cell.seen & bits;
+      cell.seen |= bits;
+      total.folders.add(folder);
+      if (folder.startsWith("w")) total.worktrees.add(folder);
+    }
+    total.parallel += countSlots(cell.parallel.toString(2)) * SLOT_HOURS;
+  }
+  return totals;
+}
+function median(values) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b), middle = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+// Dotted numeric parts, so 0.10.0 sorts after 0.9.0.
+const newerVersion = (a, b) => (b ?? "").localeCompare(a ?? "", undefined, { numeric: true }) > 0;
+// What each person used most recently per tool, flagged when behind the newest anyone here used.
+function latestToolVersions(rows) {
+  const latest = new Map(), newest = new Map();
+  for (const u of rows) {
+    if (!u.tool_version) continue;
+    if (newerVersion(newest.get(u.tool), u.tool_version)) newest.set(u.tool, u.tool_version);
+    const key = `${u.developer}\n${u.tool}`, seen = latest.get(key);
+    if (!seen || u.day > seen.day || (u.day === seen.day && newerVersion(seen.version, u.tool_version))) latest.set(key, { person: u.developer, tool: u.tool, version: u.tool_version, day: u.day });
+  }
+  return [...latest.values()].map((r) => ({ ...r, behind: newerVersion(r.version, newest.get(r.tool)) }))
+    .sort((a, b) => a.tool.localeCompare(b.tool) || b.behind - a.behind || a.person.localeCompare(b.person));
+}
+const IST_MS = 5.5 * 3600000, AI_WINDOW_SLOTS = 36n, SLOTS_PER_DAY = 288n, FULL_DATA_COLLECTOR = "0.7.2";
+// Sorts commits by how much is known about AI's part in them. "noAi" is only ever said when every laptop
+// the person has was reporting at the time, because no data must never read as manual work.
+// shortcut: AI activity the day before a period starts isn't loaded, so a commit just after that can read as noAi; only the first hours of a period.
+function classifyCommits(commits, usage, machines) {
+  const active = new Map();
+  const blocks = (person, repo, day) => active.get(`${person}\n${repo}\n${day}`) ?? 0n;
+  for (const u of usage) {
+    if (!u.active || !u.ist) continue;
+    active.set(`${u.developer}\n${u.repo}\n${u.day}`, blocks(u.developer, u.repo, u.day) | slotBits(u.active));
+  }
+  const reported = new Map(); // each person's window that all their laptops cover: { from day, until time }
+  for (const m of machines) {
+    const seen = reported.get(m.developer) ?? { from: "", until: Infinity };
+    const ready = !newerVersion(m.version, FULL_DATA_COLLECTOR) && m.first_ist_day;
+    reported.set(m.developer, ready
+      ? { from: m.first_ist_day > seen.from ? m.first_ist_day : seen.from, until: Math.min(seen.until, Date.parse(m.last_seen)) }
+      : { from: "9999", until: -Infinity });
+  }
+  const dayOf = (ms) => new Date(ms).toISOString().slice(0, 10);
+  for (const c of commits) {
+    const when = Date.parse(c.authored_at), local = when + IST_MS, day = dayOf(local);
+    const slot = BigInt(Math.floor((local % 86400000) / 300000));
+    c.day = day;
+    c.stage = commitStage(c);
+    // Two days side by side, so the window can reach back past midnight.
+    const days = blocks(c.person, c.repo, dayOf(local - 86400000)) | (blocks(c.person, c.repo, day) << SLOTS_PER_DAY);
+    const nearby = (days >> (SLOTS_PER_DAY + slot - AI_WINDOW_SLOTS)) & ((1n << (AI_WINDOW_SLOTS + 1n)) - 1n);
+    const covered = reported.get(c.person);
+    c.kind = c.ai ? "marked" : nearby ? "nearby" : covered && day >= covered.from && when <= covered.until ? "noAi" : "unknown";
+  }
+}
+// Logged time from solidtime, added up by whatever the key is.
+function logBy(rows, keyOf) {
+  const totals = new Map();
+  for (const t of rows) {
+    const key = keyOf(t);
+    const total = totals.get(key) ?? totals.set(key, { hours: 0, days: new Set(), people: new Set(), repos: new Set() }).get(key);
+    total.hours += t.seconds / 3600;
+    total.days.add(t.day);
+    total.people.add(t.person);
+    t.repos.split(",").filter(Boolean).forEach((repo) => total.repos.add(repo));
+  }
+  return totals;
+}
+// Days on leave per person, and how many had work on them. A half day off can have work, so only full days count.
+function leaveBy(leave, workDaysOf) {
+  const totals = new Map();
+  for (const l of leave) {
+    const total = totals.get(l.person) ?? totals.set(l.person, { days: 0, workedOn: 0 }).get(l.person);
+    total.days += l.portion;
+    if (l.portion === 1 && workDaysOf(l.person).has(l.day)) total.workedOn += 1;
+  }
+  return totals;
+}
+// Projects sharing a repo become one row: the repo's activity can't be split between them, so separate rows would repeat it.
+function projectGroups(timeLog, repos) {
+  const groups = [];
+  const add = (projects, list) => {
+    const merged = { projects: new Set(projects), repos: new Set(list) };
+    for (let i = groups.length - 1; i >= 0; i--) {
+      if (![...merged.repos].some((r) => groups[i].repos.has(r))) continue;
+      groups[i].projects.forEach((name) => merged.projects.add(name));
+      groups[i].repos.forEach((r) => merged.repos.add(r));
+      groups.splice(i, 1);
+    }
+    groups.push(merged);
+  };
+  const logged = logBy(timeLog, (t) => t.project);
+  for (const [project, total] of logged) add([project], total.repos);
+  const known = new Set(groups.flatMap((g) => [...g.repos]));
+  for (const repo of new Set(repos)) if (!known.has(repo)) add([], [repo]);
+  return groups;
+}
+// When people typed prompts, per IST hour. UTC rows are skipped because their blocks would land in the wrong hour.
+// shortcut: a late night that runs past midnight counts as an early start on the next day, which only skews the medians.
+function promptHours(rows) {
+  const days = new Map();
+  for (const u of rows) {
+    if (!u.prompted || !u.ist) continue;
+    const id = `${u.developer}\n${u.day}`;
+    days.set(id, (days.get(id) ?? 0n) | slotBits(u.prompted));
+  }
+  const people = new Map();
+  for (const [id, bits] of days) {
+    if (!bits) continue;
+    const name = id.split("\n")[0];
+    const person = people.get(name) ?? people.set(name, { name, slots: Array(24).fill(0), firsts: [], lasts: [], days: 0 }).get(name);
+    const found = [...bits.toString(2)].reverse().flatMap((bit, slot) => (bit === "1" ? [slot] : []));
+    found.forEach((slot) => { person.slots[Math.floor(slot / 12)] += 1; });
+    person.firsts.push(found[0] * 5);
+    person.lasts.push(found[found.length - 1] * 5);
+    person.days += 1;
+  }
+  return [...people.values()].map((p) => ({ ...p, first: median(p.firsts), last: median(p.lasts), total: p.slots.reduce((a, b) => a + b, 0) })).sort((a, b) => b.total - a.total);
+}
+// main/master, or a branch that deploys somewhere. Anything else hasn't reached a server. A laptop can't say which branch.
+const MAIN_BRANCHES = new Set(["main", "master"]), SERVER_BRANCHES = new Set(["develop", "development", "dev", "stage", "staging", "release"]);
+function commitStage(c) {
+  const branch = (c.branch ?? "").toLowerCase();
+  if (MAIN_BRANCHES.has(branch)) return "main";
+  if (SERVER_BRANCHES.has(branch)) return "develop";
+  if (c.on_default) return "main";
+  return c.branch ? "branch" : "unknown";
+}
+// One row per branch and person, oldest work first, with any open PR from that branch.
+function offServerWork(commits, prs) {
+  const open = new Map(prs.filter((pr) => !pr.merged_at && pr.head_ref).map((pr) => [`${pr.repo}\n${pr.head_ref}`, pr.number]));
+  const rows = new Map();
+  for (const c of commits) {
+    if (commitStage(c) !== "branch") continue;
+    const id = `${c.repo}\n${c.branch}\n${c.person}`;
+    const row = rows.get(id) ?? rows.set(id, { repo: c.repo, branch: c.branch, person: c.person, commits: 0, first: c.authored_at, last: c.authored_at, pr: open.get(`${c.repo}\n${c.branch}`) ?? null }).get(id);
+    row.commits += 1;
+    if (c.authored_at < row.first) row.first = c.authored_at;
+    if (c.authored_at > row.last) row.last = c.authored_at;
+  }
+  return [...rows.values()].sort((a, b) => a.first.localeCompare(b.first));
+}
+// One person's days, in IST, for the timeline. Blocks are 5 minutes, because that's what laptops report.
+function slotRuns(bits) {
+  const runs = [];
+  [...bits.toString(2)].reverse().forEach((bit, slot) => {
+    if (bit !== "1") return;
+    const last = runs[runs.length - 1];
+    if (last && last[1] === slot) last[1] = slot + 1;
+    else runs.push([slot, slot + 1]);
+  });
+  return runs;
+}
+function dayTimeline(rows, commits) {
+  const days = new Map();
+  const get = (day) => days.get(day) ?? days.set(day, { day, active: 0n, prompted: 0n, prompts: 0, commits: [] }).get(day);
+  for (const u of rows) {
+    if (!u.ist || !(u.active || u.prompted || u.prompts)) continue;
+    const row = get(u.day);
+    row.active |= slotBits(u.active);
+    row.prompted |= slotBits(u.prompted);
+    row.prompts += u.prompts ?? 0;
+  }
+  for (const c of commits) {
+    const local = Date.parse(c.authored_at) + IST_MS;
+    get(new Date(local).toISOString().slice(0, 10)).commits.push(Math.floor((local % 86400000) / 60000));
+  }
+  return [...days.values()].map((row) => {
+    const promptRuns = slotRuns(row.prompted), activeRuns = slotRuns(row.active);
+    const running = countSlots(row.active.toString(2));
+    const ends = [...row.commits, ...activeRuns.map((run) => (run[1] - 1) * 5), ...promptRuns.map((run) => (run[1] - 1) * 5)];
+    return {
+      day: row.day, prompts: row.prompts, commits: row.commits.sort((a, b) => a - b), promptRuns, activeRuns,
+      firstPrompt: promptRuns.length ? promptRuns[0][0] * 5 : null,
+      lastPrompt: promptRuns.length ? (promptRuns[promptRuns.length - 1][1] - 1) * 5 : null,
+      promptSpan: promptRuns.length ? (promptRuns[promptRuns.length - 1][1] - promptRuns[0][0]) * SLOT_HOURS : null,
+      lastActivity: ends.length ? Math.max(...ends) : null,
+      running: running * SLOT_HOURS,
+      handsOn: Math.min(handsOnSlots(row.prompted), running) * SLOT_HOURS,
+    };
+  }).sort((a, b) => b.day.localeCompare(a.day));
+}
+// Stretches of activity in a day, joining anything up to 15 minutes apart, as hands-on time does.
+function dayStretches(d) {
+  const runs = [...d.activeRuns, ...d.promptRuns, ...d.commits.map((m) => [Math.floor(m / 5), Math.floor(m / 5) + 1])].sort((a, b) => a[0] - b[0]);
+  const stretches = [];
+  for (const [from, to] of runs) {
+    const last = stretches[stretches.length - 1];
+    if (last && from - last.to <= 3) last.to = Math.max(last.to, to);
+    else stretches.push({ from, to });
+  }
+  return stretches.map((s) => ({ from: s.from * 5, to: s.to * 5, commits: d.commits.filter((m) => m >= s.from * 5 && m < s.to * 5).length }));
+}
+// The dot for one person on one repo. Grey is "can't tell", kept apart from red so a missing report never reads as skipping the harness.
+const HARNESS_FROM = "0.10.0";
+const HARNESS_FRESH_DAYS = 7;
+function harnessStatus(person, repo, tools, machines, harness, now = Date.now()) {
+  if (tools.size && !tools.has("claude-code")) return { state: "grey", why: "Codex only" };
+  const fresh = machines.filter((m) => m.developer === person && now - new Date(m.last_seen).getTime() <= HARNESS_FRESH_DAYS * 86400000);
+  if (!fresh.length) return { state: "grey", why: "laptop not reporting" };
+  const reporting = fresh.filter((m) => !newerVersion(m.version, HARNESS_FROM));
+  if (!reporting.length) return { state: "grey", why: "needs re-install" };
+  const rows = harness.filter((h) => h.developer === person && h.repo === repo && reporting.some((m) => m.machine === h.machine));
+  if (!rows.length) return { state: "grey", why: "repo not found on laptop" };
+  if (rows.some((h) => h.plugin && h.hooks)) return { state: "green", why: "" };
+  // The plugin decides the colour. Hooks are a separate step per copy of a repo, so they're only noted.
+  return rows.some((h) => h.plugin) ? { state: "green", why: "git hooks off" } : { state: "red", why: "plugin off" };
+}
+// Null (no data) rather than 0 when there are no hours to divide by.
+function tokensPerHour(tokens, hours) {
+  return typeof hours === "number" && hours > 0 && Number.isFinite(hours) ? tokens / hours : null;
+}
+// When a person's laptops were reporting: earliest first_ist_day to the IST day of the latest last_seen. Null if unknown.
+function reportingWindow(machines, person) {
+  const mine = machines.filter((m) => m.developer === person);
+  const firsts = mine.map((m) => m.first_ist_day).filter(Boolean).sort();
+  const seen = Math.max(...mine.map((m) => Date.parse(m.last_seen)));
+  return firsts.length && Number.isFinite(seen) ? { from: firsts[0], until: new Date(seen + IST_MS).toISOString().slice(0, 10) } : null;
+}
+// One person's logged hours on days inside their reporting window, both ends included. Null without a window.
+function hoursInWindow(log, person, window) {
+  if (!window) return null;
+  return log.filter((t) => t.person === person && t.day >= window.from && t.day <= window.until).reduce((sum, t) => sum + t.seconds / 3600, 0);
+}
+// Dash (null) when hours aren't split by the chosen filter, or there is no AI use or no hours.
+function tokensPerHourCell(tokens, sessions, hours, { model, tool }) {
+  return model || tool || !sessions ? null : tokensPerHour(tokens, hours);
+}
+// Tokens and hours both limited to the reporting window. Null (a dash) when the window, tokens or hours are missing.
+function tokensPerReportedHour(usage, log, machines, person, { model, tool }) {
+  const window = reportingWindow(machines, person);
+  if (!window) return null;
+  const tokens = usage.filter((u) => u.developer === person && u.day >= window.from && u.day <= window.until).reduce((sum, u) => sum + u.input + u.output, 0);
+  return tokens ? tokensPerHourCell(tokens, 1, hoursInWindow(log, person, window), { model, tool }) : null;
+}
+const isStuck = (pr) => !pr.merged_at && Date.now() - new Date(pr.created_at).getTime() > STUCK_DAYS * DAY_MS;
+
+function emptyGroup(key) {
+  return { key, sessions: new Set(), repos: new Set(), tools: new Set(), models: new Map(), people: new Set(), days: new Set(), mergeDays: [], lines: 0, hasLines: false, tokens: 0, prompts: 0, commits: 0, branch: 0, marked: 0, nearby: 0, noAi: 0, unknown: 0, linesCommitted: 0, noAiLines: 0, merged: 0, humanReviewed: 0, agentReviewed: 0, agentRecorded: false, unreviewed: 0, stuck: 0 };
+}
+function addUsage(group, u) {
+  group.sessions.add(u.tool + u.session);
+  group.repos.add(u.repo);
+  group.tools.add(u.tool);
+  group.people.add(u.developer);
+  group.days.add(u.day);
+  group.models.set(u.model, (group.models.get(u.model) ?? 0) + u.input + u.output);
+  if (u.added !== null) group.hasLines = true;
+  group.lines += u.added ?? 0;
+  group.tokens += u.input + u.output;
+  group.prompts += u.prompts ?? 0;
+}
+function addPr(group, pr) {
+  if (pr.merged_at) {
+    group.merged += 1;
+    // null means no review result was recorded, which is not the same as no review.
+    if (pr.agent_review != null) group.agentRecorded = true;
+    group.mergeDays.push((new Date(pr.merged_at) - new Date(pr.created_at)) / DAY_MS);
+    if (pr.human_review) group.humanReviewed += 1;
+    if (pr.agent_review) group.agentReviewed += 1;
+    if (!pr.any_review) group.unreviewed += 1;
+  } else if (isStuck(pr)) {
+    group.stuck += 1;
+  }
+}
+// Counts merged PRs only. Until one has a recorded value, say so rather than showing 0.
+const claudeReviewLine = (g) => (g.agentRecorded ? `${g.agentReviewed} of ${g.merged} merged had a Claude Code review, ${g.merged - g.agentReviewed} not recorded` : "Claude Code review not recorded yet");
+// hours:end
+
+let data = null;
+let selectedDay = null;
+let showAllOffServer = false;
+let secrets = { state: "loading", findings: [], partial: false };
+
+function addCommit(group, c) {
+  group.days.add(c.day);
+  // Kept apart: a squash merge gives a branch's work a new commit ID, so adding these would count it twice.
+  if (!c.on_default) {
+    group.branch += 1;
+    return;
+  }
+  group.commits += 1;
+  group[c.kind] += 1;
+  group.linesCommitted += c.lines_added;
+  if (c.kind === "noAi") group.noAiLines += c.lines_added;
+}
+function groupBy(usage, commits, prs, usageKey, commitKey, prKey) {
+  const groups = new Map();
+  const get = (key) => groups.get(key) ?? groups.set(key, emptyGroup(key)).get(key);
+  usage.forEach((u) => addUsage(get(usageKey(u)), u));
+  commits.forEach((c) => addCommit(get(commitKey(c)), c));
+  prs.forEach((pr) => addPr(get(prKey(pr)), pr));
+  return [...groups.values()];
+}
+const toolNames = (group) => [...group.tools].sort().map(toolLabel).join(", ");
+// shortcut: a hand-kept list, and Codex models aren't judged. Update it when a new Claude model ships.
+const CURRENT_CLAUDE_MODELS = new Set(["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-fable-5-1"]);
+const isOlderModel = (model) => model.startsWith("claude-") && !CURRENT_CLAUDE_MODELS.has(model.replace(/-\d{8}$/, ""));
+const flagged = (text) => el("span", { class: "warn" }, warningIcon(), text);
+const modelLabel = (model) => (isOlderModel(model) ? flagged(`${model}, older`) : model);
+const MIX_SHOWN = 3;
+const modelMix = (group) => {
+  const top = [...group.models].sort((a, b) => b[1] - a[1]);
+  if (!top.length) return "–";
+  const text = top.slice(0, MIX_SHOWN).map(([model, tokens]) => `${model.replace(/^claude-/, "")} ${percent(tokens, group.tokens)}`).join(", ");
+  // Flagged when the model used most is an older one.
+  return isOlderModel(top[0][0]) ? flagged(text) : text;
+};
+const olderTokens = (group) => [...group.models].reduce((sum, [model, tokens]) => sum + (isOlderModel(model) ? tokens : 0), 0);
+
+function fillSelect(select, values, allLabel, label = (v) => v) {
+  const current = select.value;
+  select.replaceChildren(el("option", { value: "" }, allLabel), ...values.map((v) => el("option", { value: v }, label(v))));
+  select.value = values.includes(current) ? current : "";
+}
+function setPerson(person) {
+  $("developer").value = $("developer").value === person ? "" : person;
+  render();
+}
+
+let tipCount = 0;
+// A real button rather than a title attribute, which can't be clicked and never shows on touch screens.
+// The popover sits above the table's scroll area, so it isn't cut off, and closes on Escape or a click elsewhere.
+function helpTip(title, text) {
+  const id = `tip-${++tipCount}`;
+  const button = el("button", { type: "button", class: "tip", popovertarget: id, "aria-label": `What is ${title}?` }, "?");
+  const tip = el("div", { id, popover: "auto", class: "tip-text" }, text);
+  tip.addEventListener("beforetoggle", (event) => {
+    if (event.newState !== "open") return;
+    const at = button.getBoundingClientRect();
+    tip.style.top = `${at.bottom + 6}px`;
+    tip.style.left = `${Math.max(8, Math.min(at.left - 120, innerWidth - 288))}px`;
+  });
+  return [button, tip];
+}
+
+function table(columns, rows) {
+  const cls = (c) => (c.numeric ? "n" : c.wrap ? "wrap" : c.cell ?? null);
+  const cellProps = (c) => (cls(c) ? { class: cls(c) } : {});
+  return el("div", { class: "scroll" }, el("table", {},
+    el("thead", {}, el("tr", {}, columns.map((c) => el("th", { scope: "col", ...cellProps(c) }, c.title, c.help ? helpTip(c.title, c.help) : null)))),
+    el("tbody", {}, rows.map((row) => el("tr", {}, columns.map((c) => el("td", cellProps(c), c.value(row))))))));
+}
+
+function calendar(usage, commits, log, leave, teamUsage, cutoff) {
+  const today = istToday();
+  const first = cutoff > "0000-00-00" ? cutoff : teamUsage.reduce((min, u) => (u.day < min ? u.day : min), today);
+  const byDay = new Map();
+  usage.forEach((u) => {
+    if (!byDay.has(u.day)) byDay.set(u.day, emptyGroup(u.day));
+    addUsage(byDay.get(u.day), u);
+  });
+  commits.forEach((c) => {
+    if (!byDay.has(c.day)) byDay.set(c.day, emptyGroup(c.day));
+    addCommit(byDay.get(c.day), c);
+  });
+  const dayLog = logBy(log, (t) => t.day);
+  const offByDay = new Map();
+  leave.forEach((l) => offByDay.set(l.day, (offByDay.get(l.day) ?? 0) + 1));
+  const offLabel = (n) => ($("developer").value ? "On leave" : `${n} on leave`);
+  // Scaled to the whole team, so selecting one person shows their share of each day, not a fuller calendar.
+  const teamTokens = new Map();
+  teamUsage.forEach((u) => teamTokens.set(u.day, (teamTokens.get(u.day) ?? 0) + u.input + u.output));
+  const peak = Math.max(1, ...teamTokens.values());
+
+  const start = utc(first);
+  const leading = start.getUTCDay();
+  const dayCount = Math.round((utc(today) - start) / DAY_MS) + 1;
+  const weeks = Math.ceil((leading + dayCount) / 7);
+  const cells = [];
+  for (let i = 0; i < leading; i++) cells.push(el("div", { class: "day blank" }));
+  for (let i = 0; i < dayCount; i++) {
+    const date = new Date(start.getTime() + i * DAY_MS), day = iso(date), group = byDay.get(day), sunday = date.getUTCDay() === 0;
+    const dateNumber = date.getUTCDate();
+    const monthLabel = dateNumber === 1 || i === 0 ? formatDay(day, { month: "short" }) : null;
+    const summary = group ? [group.prompts && plural(group.prompts, "prompt"), group.sessions.size && `${plural(group.sessions.size, "session")}, ${compact(group.tokens)} tokens`, (group.commits + group.branch) && plural(group.commits + group.branch, "commit")].filter(Boolean).join(", ") : "nothing reported";
+    const logged = dayLog.get(day), off = offByDay.get(day);
+    const classes = ["day", sunday && "sun", day === today && "today", !group && "quiet"].filter(Boolean).join(" ");
+    const props = { class: classes, type: "button", "aria-pressed": String(selectedDay === day), "aria-label": `${formatDay(day, { weekday: "long", day: "numeric", month: "long" })}: ${summary}`, onclick: () => { selectedDay = selectedDay === day ? null : day; render(); if (selectedDay && innerWidth <= 1040) document.querySelector(".detail").scrollIntoView({ block: "start" }); } };
+    if (group?.tokens) props.style = `background-color: rgba(var(--saffron), ${(0.1 + (group.tokens / peak) * 0.75).toFixed(2)})`;
+    cells.push(el("button", props,
+      el("span", { class: "num" }, String(dateNumber), monthLabel ? el("small", {}, monthLabel) : null),
+      group?.prompts ? el("span", { class: "day-prompts" }, el("b", {}, number(group.prompts)), el("span", {}, group.prompts === 1 ? " prompt" : " prompts")) : null,
+      group?.commits + group?.branch || logged || off ? el("span", { class: "facts" }, group?.commits + group?.branch ? [plural(group.commits + group.branch, "commit"), el("br")] : null, logged ? [`${hours(logged.hours)} logged`, el("br")] : null, off ? offLabel(off) : null) : null));
+  }
+  return el("div", { class: weeks > COMPACT_WEEKS ? "compact" : "" },
+    el("div", { class: "dow" }, WEEKDAYS.map((d) => el("div", {}, d))),
+    el("div", { class: "weeks" }, cells),
+    el("div", { class: "key" }, "Less AI work", el("i"), "More"));
+}
+
+function dayDetail(usage, commits, log, leave, timeRows) {
+  const rows = usage.filter((u) => u.day === selectedDay);
+  const dayTime = timeBy(timeRows.filter((u) => u.day === selectedDay), (u) => u.developer);
+  const dayCommits = commits.filter((c) => c.day === selectedDay);
+  const dayLog = logBy(log.filter((t) => t.day === selectedDay), (t) => t.person);
+  const byPerson = groupBy(rows, dayCommits, [], (u) => u.developer, (c) => c.person);
+  const dayOff = new Map(leave.filter((l) => l.day === selectedDay).map((l) => [l.person, l.portion]));
+  for (const name of [...dayLog.keys(), ...dayOff.keys()]) if (!byPerson.some((g) => g.key === name)) byPerson.push(emptyGroup(name));
+  byPerson.sort((a, b) => b.tokens - a.tokens || b.commits - a.commits);
+  if (byPerson.length === 1) openFolds.add(`day-${byPerson[0].key}`);
+  return el("aside", { class: "detail" },
+    el("div", { class: "detail-head" },
+      el("h3", {}, formatDay(selectedDay, { weekday: "short", day: "numeric", month: "short" })),
+      el("button", { type: "button", onclick: () => { selectedDay = null; render(); } }, "Close")),
+    byPerson.length ? byPerson.map((p) => { const t = dayTimeline(timeRows.filter((u) => u.developer === p.key && u.day === selectedDay), dayCommits.filter((c) => c.person === p.key)).find((d) => d.day === selectedDay); return el("div", { class: "person" }, el("b", {}, p.key),
+      t?.firstPrompt !== null && t ? el("span", { class: "sub" }, `First prompt ${clock(t.firstPrompt)} · last ${clock(t.lastPrompt)}`) : null,
+      t?.lastActivity !== null && t ? el("span", { class: "sub" }, `Last activity ${clock(t.lastActivity)}`) : null,
+      t?.promptSpan != null || dayLog.has(p.key) ? el("span", { class: "sub compare" }, `${t?.promptSpan != null ? hours(t.promptSpan) : "No prompts"} first to last${dayLog.has(p.key) ? ` · ${hours(dayLog.get(p.key).hours)} logged` : ""}`) : null,
+      p.prompts ? el("span", { class: "sub" }, plural(p.prompts, "prompt")) : null,
+      p.sessions.size ? el("span", { class: "sub" }, `${plural(p.sessions.size, "session")} · ${compact(p.tokens)} tokens`) : null,
+      p.commits + p.branch ? el("span", { class: "sub" }, `${plural(p.commits + p.branch, "commit")}${p.noAi ? `, ${number(p.noAi)} with no AI seen` : ""}`) : null,
+      dayOff.has(p.key) ? el("span", { class: "sub" }, dayOff.get(p.key) === 1 ? "On leave" : "On leave for half the day") : null,
+      dayTime.has(p.key) ? el("span", { class: "sub" }, `${hours(dayTime.get(p.key).running)} AI running · ${hours(dayTime.get(p.key).handsOn)} hands-on`) : null,
+      p.repos.size ? el("span", { class: "sub" }, [...new Set([...p.repos].map(repoName))].join(", ")) : null,
+      t ? fold(`day-${p.key}`, "Timeline", dayColumns(t)) : null); }) : el("p", { class: "sub" }, "Nothing reported this day. People without the collector only show if they committed."));
+}
+
+// shortcut: a hand-kept list of people who've left. Their work stays in the totals, but they're not chased. Add names as they leave.
+const FORMER_PEOPLE = new Set([]);
+const personLabel = (name) => (FORMER_PEOPLE.has(name) ? `${name} (left)` : name);
+const clock = (minutes) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(Math.round(minutes % 60)).padStart(2, "0")}`;
+function activeHours(rows) {
+  const list = promptHours(selectedDay ? rows.filter((u) => u.day === selectedDay) : rows);
+  const peak = Math.max(1, ...list.flatMap((p) => p.slots));
+  const hourColumn = (hour) => ({
+    title: String(hour).padStart(2, "0"), cell: "hour",
+    value: (p) => {
+      const label = `${p.name}, ${clock(hour * 60)} to ${clock((hour + 1) * 60)}: ${hours(p.slots[hour] * SLOT_HOURS)} with prompts`;
+      return el("div", { title: label, "aria-label": label, role: "img", ...(p.slots[hour] ? { style: `background-color: rgba(var(--saffron), ${(0.1 + (p.slots[hour] / peak) * 0.75).toFixed(2)})` } : {}) });
+    },
+  });
+  return el("section", {},
+    el("h2", {}, selectedDay ? `Active hours on ${formatDay(selectedDay, { weekday: "short", day: "numeric", month: "short" })}` : "Active hours"),
+    el("p", { class: "note" }, `5-minute blocks with a typed prompt, in IST.${selectedDay ? "" : " Select a day above to see just that day."} This isn't time worked: agents left running, reading and meetings don't count.`),
+    list.length ? [table([
+      { title: "Person", value: (p) => p.name },
+      selectedDay ? null : { title: "Days", numeric: true, value: (p) => number(p.days) },
+      { title: selectedDay ? "First" : "Usual first", value: (p) => clock(p.first) },
+      { title: selectedDay ? "Last" : "Usual last", value: (p) => clock(p.last) },
+      ...Array.from({ length: 24 }, (_, hour) => hourColumn(hour)),
+    ].filter(Boolean), list), el("div", { class: "key" }, "Less", el("i"), "More")] : el("p", { class: "sub" }, "No prompt times in this selection. They need collector 0.7.2."));
+}
+
+let secretView = null;
+async function openSecretContext(person, type) {
+  secretView = { person, type, state: "loading" };
+  render();
+  try {
+    const response = await fetch(`/api/dashboard?part=secret-context&person=${encodeURIComponent(person)}&type=${encodeURIComponent(type)}&days=${encodeURIComponent($("days").value)}`);
+    if (!response.ok) throw new Error(String(response.status));
+    secretView = { person, type, state: "ready", ...await response.json() };
+  } catch {
+    secretView = { person, type, state: "error" };
+  }
+  render();
+  $("secret-view")?.scrollIntoView({ block: "start" });
+}
+function secretPanel() {
+  if (!secretView) return null;
+  const rows = secretView.rows ?? [];
+  const source = (r) => (r.role === "prompt" ? (r.agent ? "Subagent prompt" : "Typed prompt") : r.role === "response" ? "AI response" : "Command or tool");
+  return el("div", { class: "prompt-view", id: "secret-view" },
+    el("div", { class: "detail-head" },
+      el("h3", {}, `${personLabel(secretView.person)}: ${secretView.type}`),
+      linkButton("Close", () => { secretView = null; render(); })),
+    el("p", { class: "note" }, "The text around each one, with the value replaced by a marker. Each view is logged. Other secrets can still appear in this text, so treat it as confidential."),
+    secretView.state === "loading" ? el("p", { class: "sub" }, "Loading…") : null,
+    secretView.state === "error" ? el("p", { class: "message error" }, "Could not load these. Try again in a moment.") : null,
+    secretView.state === "ready" && !rows.length ? el("p", { class: "sub" }, "No text found for these. It may be past the 90-day limit.") : null,
+    secretView.partial ? el("p", { class: "sub" }, "Showing the most recent only.") : null,
+    rows.map((r) => el("article", { class: "prompt" },
+      el("div", { class: "sub" }, `${stamp(r.at)} · ${source(r)} · ${repoName(r.repo)} · ${toolLabel(r.tool)} · secret ${r.secret}`),
+      el("div", { class: "prompt-text" }, r.text))));
+}
+
+let promptView = null;
+async function openPrompts(person, day) {
+  promptView = { person, day, state: "loading" };
+  render();
+  try {
+    const response = await fetch(`/api/dashboard?part=prompts&person=${encodeURIComponent(person)}&day=${encodeURIComponent(day)}`);
+    if (!response.ok) throw new Error(String(response.status));
+    promptView = { person, day, state: "ready", ...await response.json() };
+  } catch {
+    promptView = { person, day, state: "error" };
+  }
+  render();
+  $("prompt-view")?.scrollIntoView({ block: "start" });
+}
+function promptPanel(person) {
+  if (promptView?.person !== person) return null;
+  const when = (at) => new Date(at).toLocaleTimeString("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit" });
+  const list = promptView.prompts ?? [];
+  return el("div", { class: "prompt-view", id: "prompt-view" },
+    el("div", { class: "detail-head" },
+      el("h3", {}, `Prompts on ${formatDay(promptView.day, { weekday: "short", day: "numeric", month: "short" })}`),
+      linkButton("Close", () => { promptView = null; render(); })),
+    el("p", { class: "note" }, "Each view is logged. Known secret formats were removed on the laptop, but others can get through, so treat this as confidential."),
+    promptView.state === "loading" ? el("p", { class: "sub" }, "Loading…") : null,
+    promptView.state === "error" ? el("p", { class: "message error" }, "Could not load these prompts. Try again in a moment.") : null,
+    promptView.state === "ready" && !list.length ? el("p", { class: "sub" }, "No text captured for this day. Capture needs a recent collector, and text is deleted after 90 days.") : null,
+    promptView.partial ? el("p", { class: "sub" }, "Too many files to read at once, so some prompts may be missing.") : null,
+    list.map((p) => el("article", { class: "prompt" },
+      el("div", { class: "sub" }, `${when(p.at)} · ${repoName(p.repo)} · ${toolLabel(p.tool)}${p.truncated ? " · cut short" : ""}`),
+      el("div", { class: "prompt-text" }, p.text))));
+}
+
+function timelineBar(d) {
+  const span = (cls, from, to, label) => el("span", { class: cls, title: label, style: `left:${(from / 288) * 100}%;width:${((to - from) / 288) * 100}%` });
+  return el("div", { class: "timeline", role: "img", "aria-label": `${formatDay(d.day, { day: "numeric", month: "short" })}: ${d.promptRuns.map((r) => `prompts ${clock(r[0] * 5)} to ${clock(r[1] * 5)}`).join(", ") || "no prompts"}. ${plural(d.commits.length, "commit")}.` },
+    d.activeRuns.map((r) => span("run", r[0], r[1], `AI running ${clock(r[0] * 5)} to ${clock(r[1] * 5)}`)),
+    d.promptRuns.map((r) => span("typed", r[0], r[1], `Prompts ${clock(r[0] * 5)} to ${clock(r[1] * 5)}`)),
+    d.commits.map((m) => el("span", { class: "commit", title: `Commit at ${clock(m)}`, style: `left:${(m / 1440) * 100}%` })));
+}
+
+// Each kind of activity gets its own labelled column, so nothing depends on telling colours apart.
+function dayColumns(d) {
+  const block = (cls, from, to, label) => el("span", { class: cls, title: label, style: `top:${(from / 288) * 100}%;height:${((to - from) / 288) * 100}%` });
+  const lane = (title, ...marks) => el("div", { class: "lane" }, el("div", { class: "lane-title" }, title), el("div", { class: "lane-track" }, marks));
+  const length = (minutes) => (minutes < 60 ? `${minutes} min` : hours(minutes / 60));
+  return el("div", { class: "day-columns" },
+    el("div", { class: "lanes" },
+      el("div", { class: "lane hours-lane" }, el("div", { class: "lane-title" }, "IST"), el("div", { class: "lane-track" }, Array.from({ length: 9 }, (_, i) => el("span", { class: "hour-label", style: `top:${(i * 3 / 24) * 100}%` }, i === 8 ? "24:00" : clock(i * 180))))),
+      lane("Prompts", d.promptRuns.map((r) => block("typed", r[0], r[1], `Prompts ${clock(r[0] * 5)} to ${clock(r[1] * 5)}`))),
+      lane("AI running", d.activeRuns.map((r) => block("run", r[0], r[1], `AI running ${clock(r[0] * 5)} to ${clock(r[1] * 5)}`))),
+      lane("Commits", d.commits.map((m) => el("span", { class: "commit", title: `Commit at ${clock(m)}`, style: `top:${(m / 1440) * 100}%` })))),
+    el("ol", { class: "stretches" }, dayStretches(d).map((s) => el("li", {},
+      el("b", {}, `${clock(s.from)} to ${clock(s.to)}`), ` ${length(s.to - s.from)}${s.commits ? `, ${plural(s.commits, "commit")}` : ""}`))));
+}
+
+function timelineSection(person, rows, commits, log, leave) {
+  const logged = logBy(log, (t) => t.day);
+  const off = new Map(leave.map((l) => [l.day, l.portion]));
+  const list = dayTimeline(selectedDay ? rows.filter((u) => u.day === selectedDay) : rows, commits).filter((d) => !selectedDay || d.day === selectedDay);
+  const axis = el("div", { class: "timeline-axis" }, [0, 6, 12, 18].map((hour) => el("span", { style: `left:${(hour / 24) * 100}%` }, clock(hour * 60))));
+  const time = (minutes) => (minutes === null ? "–" : clock(minutes));
+  return el("section", {},
+    el("h2", {}, "Day by day"),
+    el("p", { class: "note" }, "In IST, to the nearest 5 minutes for prompts. Last activity includes agents still running after the last prompt, so it isn't when someone stopped working. First to last is the time between the first and last prompt, including breaks. Needs collector 0.7.2."),
+    promptPanel(person),
+    list.length ? [
+      el("div", { class: "key" }, el("span", { class: "swatch typed" }), "Prompts", el("span", { class: "swatch run" }), "AI running", el("span", { class: "swatch commit" }), "Commit"),
+      table([
+        { title: "Day", value: (d) => [formatDay(d.day, { weekday: "short", day: "numeric", month: "short" }), off.has(d.day) ? el("div", { class: "sub" }, off.get(d.day) === 1 ? "On leave" : "Half day leave") : null] },
+        { title: "First prompt", value: (d) => time(d.firstPrompt) },
+        { title: "Last prompt", value: (d) => time(d.lastPrompt) },
+        { title: "Last activity", value: (d) => time(d.lastActivity) },
+        { title: "Prompts", numeric: true, value: (d) => (!d.prompts ? "–" : data.canReadPrompts ? linkButton(number(d.prompts), () => openPrompts(person, d.day)) : number(d.prompts)) },
+        { title: "First to last", numeric: true, value: (d) => (d.promptSpan === null ? "–" : hours(d.promptSpan)) },
+        { title: "Hands-on", numeric: true, value: (d) => (d.running ? hours(d.handsOn) : "–") },
+        { title: "Logged", numeric: true, value: (d) => (logged.has(d.day) ? hours(logged.get(d.day).hours) : "–") },
+        { title: "Commits", numeric: true, value: (d) => (d.commits.length ? number(d.commits.length) : "–") },
+        { title: axis, cell: "timeline-cell", value: timelineBar },
+      ], list)] : el("p", { class: "sub" }, "Nothing in this selection."));
+}
+
+const openFolds = new Set();
+// Refreshes rebuild the page, so what's open is remembered here.
+function fold(id, title, ...children) {
+  const node = el("details", { id }, el("summary", {}, title), el("div", {}, children));
+  node.open = openFolds.has(id);
+  node.addEventListener("toggle", () => (node.open ? openFolds.add(id) : openFolds.delete(id)));
+  return node;
+}
+function openFold(id) {
+  openFolds.add(id);
+  const node = $(id);
+  node.open = true;
+  node.scrollIntoView({ block: "start" });
+}
+const tile = (label, value, sub, alert) => el("div", { class: "tile" }, el("span", { class: "tile-label" }, label), el("b", alert ? { class: "alert" } : {}, value), sub ? el("span", { class: "sub" }, sub) : null);
+const linkButton = (text, onclick) => el("button", { type: "button", class: "link", onclick }, text);
+const SHOWN = 5, OFF_SERVER_SHOWN = 10;
+const chips = (items) => el("ul", { class: "chips" }, items.slice(0, SHOWN).map((item) => el("li", {}, item)), items.length > SHOWN ? el("li", { class: "sub" }, `+${items.length - SHOWN} more`) : null);
+
+function glossary(syncedAt, leaveSynced) {
+  const terms = [
+    ["Projects", "Solidtime projects that share a repo are one row, because a repo's activity can't be split between them. Repos come from a hand-kept list. A repo with no project shows under its own name."],
+    ["Logged", "Hours in solidtime. Billable rates and entry descriptions aren't stored."],
+    ["Hands-on AI", "An estimate from log timestamps, not time worked: the time around typed prompts, with prompts up to 15 minutes apart joined. It misses reading without prompting, and scheduled prompts can look typed. Needs collector 0.7.0."],
+    ["AI running", "Any 5-minute block with AI activity, including agents left alone."],
+    ["Commits", "Default branch only, so someone working on a long-running branch can show 0 here. Your org's repos come from GitHub. Client repos come from laptops on collector 0.8.0, so one stays invisible until someone working in it re-installs."],
+    ["AI-linked", "Share of commits marked AI or with AI nearby. A + means some commits can't be told apart, so the real share may be higher."],
+    ["Marked AI", "The commit names an AI tool."],
+    ["AI nearby", "Claude Code or Codex was active for that person in that repo in the 3 hours before. That doesn't mean AI wrote it."],
+    ["No AI seen", "Neither, with all their laptops on collector 0.7.2 and reporting. It's the closest sign of manual work, but tools we don't track, like Cursor or web chat, look the same."],
+    ["Can't tell", "Their laptops weren't all reporting at the time."],
+    ["Not on a server", "Commits only on branches other than main, master, develop, development, dev, stage, staging or release. GitHub repos only, because laptops can't say which branch. Commits never pushed anywhere can't be seen from GitHub."],
+    ["Other branches", "Commits not on the default branch: unmerged work, or branches already squash merged. They're kept out of Commits so nothing counts twice. They come from GitHub for your org's repos and from laptops for client repos."],
+    ["Lines", "Default branch, leaving out commits over 20,000 lines. They can include generated files on your org's repos."],
+    ["No review", "Merged PRs with no review from anyone. Reviews by the author don't count, and neither do Greptile's trial notices. Any other review counts, including a comment-only one or a bot's. Drafts and bots' PRs aren't counted. The line under the tile counts merged PRs that had a Claude Code review. \"Not recorded yet\" means nothing has been recorded, which doesn't mean there was none."],
+    ["Leave", leaveSynced ? `From the HR system, days only, last updated ${stamp(leaveSynced)}. Work on a leave day may just mean an agent kept running or the leave changed.` : "No leave has been sent yet."],
+    ["Possible secrets", "Found in typed prompts, AI responses and commands. Known formats are removed on the laptop before upload, leaving a type and a fingerprint. Secrets with no recognisable format can still get through, so a clean result isn't a guarantee."],
+    ["Active hours", "5-minute blocks with a typed prompt, in IST. Usual first and last are medians across days with prompts. Only laptops on collector 0.7.2 show here, and scheduled prompts can look typed."],
+    ["Worktrees", "Separate git worktrees. Deleted ones are only recognised in common locations, so this can run low. In 2+ folders at once includes separate clones."],
+    ["Credit", "Work goes to the account behind it, including agents running under it, so none of this measures one person's effort."],
+    ["Days", "All dates are IST. Laptops on a collector older than 0.7.2 count in UTC days until they re-install. Only laptops that report count towards AI figures, so a dash means no data, not no work."],
+  ];
+  return [el("dl", {}, terms.map(([term, text]) => [el("dt", {}, term), el("dd", {}, text)])), syncedAt ? el("p", { class: "note" }, `Git data last uploaded ${stamp(syncedAt)}.`) : null];
+}
+
+function collectorIssues(m, latest) {
+  const issues = [];
+  if (newerVersion(m.version, latest)) issues.push(`Old version: needs a re-install to reach ${latest}`);
+  if (Date.now() - new Date(m.last_seen).getTime() > 48 * 3600000) issues.push("Not heard from in over 2 days");
+  if (!m.usage_rows) issues.push("Installed, nothing collected yet");
+  if (m.unrecognized_files) issues.push(`Log format not recognised in ${plural(m.unrecognized_files, "file")}`);
+  if (m.parse_errors) issues.push(`${plural(m.parse_errors, "file")} could not be read`);
+  if (m.bad_lines) issues.push(`${number(m.bad_lines)} log lines could not be parsed`);
+  return issues;
+}
+
+function harnessSection(usage, commits, machines, harness) {
+  // Everyone with AI use or commits on a repo in this period, and which tools they used there.
+  const repos = new Map();
+  const worked = (repo, person, tool) => {
+    if (repo === "-/no-repo" || FORMER_PEOPLE.has(person)) return;
+    const people = repos.get(repo) ?? repos.set(repo, new Map()).get(repo);
+    const tools = people.get(person) ?? people.set(person, new Set()).get(person);
+    if (tool) tools.add(tool);
+  };
+  usage.forEach((u) => worked(u.repo, u.developer, u.tool));
+  commits.forEach((c) => worked(c.repo, c.person));
+  const rows = [...repos].map(([repo, people]) => {
+    const row = { repo, green: [], red: [], grey: [] };
+    [...people].sort(([a], [b]) => a.localeCompare(b)).forEach(([name, tools]) => {
+      const { state, why } = harnessStatus(name, repo, tools, machines, harness);
+      row[state].push({ name, why });
+    });
+    return row;
+  }).sort((a, b) => b.red.length - a.red.length || b.green.length - a.green.length || repoName(a.repo).localeCompare(repoName(b.repo)));
+  if (!rows.length) return null;
+  const dots = (state, list) => el("ul", { class: "harness" }, list.map((p) => el("li", {}, el("span", { class: `dot ${state}`, "aria-hidden": "true" }), p.name, p.why ? el("span", { class: "sub" }, ` (${p.why})`) : null)));
+  return el("section", {},
+    el("h2", {}, "Harness use"),
+    el("p", { class: "note" }, "Everyone with AI use or commits on a repo in this period. This shows the setup on their laptop, not whether they follow the process."),
+    table([
+      { title: "Repository", wrap: true, value: (r) => repoName(r.repo) },
+      { title: "Plugin on", wrap: true, help: "The harness Claude plugin is on for this repo. Git hooks off means git wouldn't run the harness secret scanner in their copy. A repo's own hooks don't count.", value: (r) => (r.green.length ? dots("green", r.green) : "–") },
+      { title: "Plugin off", wrap: true, help: "Their laptop reported this repo with the harness Claude plugin off.", value: (r) => (r.red.length ? dots("red", r.red) : "–") },
+      { title: "Can't tell", wrap: true, help: "No report to judge by. This means no data, not that they skip the harness. The harness plugin is for Claude Code, so Codex-only work lands here too.", value: (r) => (r.grey.length ? dots("grey", r.grey) : "–") },
+    ], rows));
+}
+
+function render() {
+  const { usage: allUsage, git: allGit, pullRequests: allPrs, machines, cutoff } = data;
+  const allRepos = [...allUsage.map((u) => u.repo), ...allGit.map((g) => g.repo), ...data.commits.map((c) => c.repo), ...allPrs.map((pr) => pr.repo)];
+  const groups = projectGroups(data.timeLog, allRepos).map((g) => ({ ...g, name: g.projects.size ? [...g.projects].sort().join(" + ") : repoName([...g.repos][0]) }));
+  fillSelect($("tool"), [...new Set(allUsage.map((u) => u.tool))].sort(), "All tools", toolLabel);
+  fillSelect($("model"), [...new Set(allUsage.map((u) => u.model))].sort(), "All models");
+  fillSelect($("repo"), groups.map((g) => g.name).sort((a, b) => a.localeCompare(b)), "All projects");
+  fillSelect($("developer"), [...new Set([...allUsage.map((u) => u.developer), ...allGit.map((g) => g.person), ...data.commits.map((c) => c.person), ...allPrs.map((pr) => pr.person), ...machines.map((m) => m.developer), ...data.timeLog.map((t) => t.person)])].sort(), "All people");
+
+  if (!allUsage.length && !allGit.length && !data.commits.length && !allPrs.length && !machines.length) {
+    $("content").replaceChildren(el("p", { class: "message" }, "Nothing has been reported in this period. Laptops report hourly once the collector is installed, and the README has the install command. Try a longer period above."));
+    return;
+  }
+  const tool = $("tool").value, model = $("model").value, projectName = $("repo").value, person = $("developer").value;
+  const project = groups.find((g) => g.name === projectName);
+  const inProject = (r) => !project || project.repos.has(r);
+  const teamUsage = allUsage.filter((u) => (!tool || u.tool === tool) && (!model || u.model === model) && inProject(u.repo));
+  const usage = teamUsage.filter((u) => !person || u.developer === person);
+  const commits = data.commits.filter((c) => inProject(c.repo) && (!person || c.person === person));
+  const log = data.timeLog.filter((t) => (!person || t.person === person) && (!project || project.projects.has(t.project)));
+  const personLog = logBy(log, (t) => t.person);
+  const leave = data.leave.filter((l) => !person || l.person === person);
+  const teamPrs = allPrs.filter((pr) => inProject(pr.repo));
+  const prs = teamPrs.filter((pr) => !person || pr.person === person);
+  // Hours ignore the Model filter: a session's minutes aren't split by model.
+  const timeRows = allUsage.filter((u) => (!tool || u.tool === tool) && inProject(u.repo) && (!person || u.developer === person));
+  const personTime = timeBy(timeRows, (u) => u.developer), repoTime = timeBy(timeRows, (u) => u.repo);
+  const toolVersions = latestToolVersions(timeRows);
+  const total = emptyGroup("all");
+  usage.forEach((u) => addUsage(total, u));
+  commits.forEach((c) => addCommit(total, c));
+  prs.forEach((pr) => addPr(total, pr));
+
+  const today = istToday();
+  const from = cutoff > "0000-00-00" ? cutoff : teamUsage.reduce((min, u) => (u.day < min ? u.day : min), today);
+  const rangeTitle = `${formatDay(from, { day: "numeric", month: "short" })} to ${formatDay(today, { day: "numeric", month: "short", year: "numeric" })}`;
+  const heading = [person && personLabel(person), projectName].filter(Boolean).join(" on ") || "All projects";
+
+  const byPerson = groupBy(usage, commits, prs, (u) => u.developer, (c) => c.person, (pr) => pr.person);
+  for (const name of personLog.keys()) if (!byPerson.some((g) => g.key === name)) byPerson.push(emptyGroup(name));
+  const loggedHours = (name) => personLog.get(name)?.hours ?? 0;
+  byPerson.sort((a, b) => loggedHours(b.key) - loggedHours(a.key) || b.commits - a.commits || b.merged - a.merged);
+  const workDays = new Map(byPerson.map((g) => [g.key, new Set([...g.days, ...(personLog.get(g.key)?.days ?? [])])]));
+  const personLeave = leaveBy(leave, (name) => workDays.get(name) ?? new Set());
+  const leaveFor = (g) => personLeave.get(g.key) ?? { days: 0, workedOn: 0 };
+  const leaveKnown = data.leave.length > 0;
+  const leaveSynced = leaveKnown ? data.leave.reduce((latest, l) => (l.synced_at > latest ? l.synced_at : latest), "") : null;
+  const byRepo = groupBy(usage, commits, prs, (u) => u.repo, (c) => c.repo, (pr) => pr.repo).sort((a, b) => b.stuck - a.stuck || b.merged - a.merged || b.sessions.size - a.sessions.size);
+  const byModel = groupBy(usage, [], [], (u) => `${u.tool}\n${u.model}`).sort((a, b) => b.tokens - a.tokens);
+  const latestVersion = machines.reduce((best, m) => (newerVersion(best, m.version) ? m.version : best), "");
+  const olderUse = [...usage.filter((u) => isOlderModel(u.model)).reduce((rows, u) => {
+    const key = `${u.developer}\n${u.model}`;
+    const row = rows.get(key) ?? { person: u.developer, model: u.model, sessions: new Set(), tokens: 0, last: "" };
+    row.sessions.add(u.tool + u.session);
+    row.tokens += u.input + u.output;
+    if (u.day > row.last) row.last = u.day;
+    return rows.set(key, row);
+  }, new Map()).values()].sort((a, b) => b.tokens - a.tokens);
+  const stuck = prs.filter(isStuck).sort((a, b) => a.created_at.localeCompare(b.created_at));
+  const syncedAt = allGit.length ? allGit[0].synced_at : null;
+  const dash = (value, shown) => (shown ? value : "–");
+
+  // One row per project, so each repo's activity appears once.
+  const projectRows = groups.map((g) => {
+    const has = (r) => g.repos.has(r);
+    const rowUsage = usage.filter((u) => has(u.repo)), rowCommits = commits.filter((c) => has(c.repo)), rowPrs = prs.filter((pr) => has(pr.repo)), rowLog = log.filter((t) => g.projects.has(t.project));
+    const row = groupBy(rowUsage, rowCommits, rowPrs, () => g.name, () => g.name, () => g.name)[0] ?? emptyGroup(g.name);
+    const stageCount = (stage) => rowCommits.filter((c) => c.stage === stage).length;
+    const serverDays = rowCommits.filter((c) => c.stage === "main" || c.stage === "develop").map((c) => c.day);
+    const names = new Map();
+    const credit = (name, weight) => names.set(name, (names.get(name) ?? 0) + weight);
+    rowLog.forEach((t) => credit(t.person, t.seconds / 3600));
+    rowCommits.forEach((c) => credit(c.person, 1));
+    rowPrs.forEach((pr) => credit(pr.person, 1));
+    rowUsage.forEach((u) => credit(u.developer, 0.01));
+    return {
+      ...row, info: g, onMain: stageCount("main"), onDevelop: stageCount("develop"), offServer: stageCount("branch"), unknownStage: stageCount("unknown"),
+      lastServer: serverDays.reduce((latest, day) => (day > latest ? day : latest), ""),
+      team: [...names].sort((a, b) => b[1] - a[1]).map(([name]) => name),
+      logged: rowLog.reduce((sum, t) => sum + t.seconds / 3600, 0),
+      time: timeBy(timeRows.filter((u) => has(u.repo)), () => g.name).get(g.name),
+      last: [...row.days, ...rowLog.map((t) => t.day)].reduce((latest, day) => (day > latest ? day : latest), ""),
+    };
+  }).filter((r) => r.logged || r.days.size || r.merged || r.stuck)
+    .sort((a, b) => a.info.repos.has("-/no-repo") - b.info.repos.has("-/no-repo") || b.logged - a.logged || b.commits - a.commits);
+  const setProject = (name) => { $("repo").value = $("repo").value === name ? "" : name; render(); scrollTo({ top: 0 }); };
+  const choosePerson = (name) => { setPerson(name); scrollTo({ top: 0 }); };
+  const projectsOf = (name) => {
+    const list = projectRows.filter((r) => r.team.includes(name) && !r.info.repos.has("-/no-repo")).map((r) => r.key);
+    return list.length ? list.slice(0, MIX_SHOWN).join(", ") + (list.length > MIX_SHOWN ? ` +${list.length - MIX_SHOWN}` : "") : "–";
+  };
+
+  const aiLinked = (g) => (g.commits ? percent(g.marked + g.nearby, g.commits) + (g.unknown ? "+" : "") : "–");
+  const outcomeColumns = [
+    { title: "Commits", numeric: true, help: "Default branch only.", value: (g) => dash(number(g.commits), g.commits) },
+    { title: "Other branches", numeric: true, help: "Commits not on the default branch yet, or from branches already squash merged. Kept apart so nothing counts twice.", value: (g) => dash(number(g.branch), g.branch) },
+    { title: "AI-linked", numeric: true, help: "Share of commits marked AI or with AI nearby. A + means some can't be told apart.", value: aiLinked },
+    { title: "PRs merged", numeric: true, value: (g) => dash(number(g.merged), g.merged) },
+    { title: "No review", numeric: true, help: "Merged PRs with no review from anyone else. Greptile's trial notices don't count.", value: (g) => percent(g.unreviewed, g.merged) },
+    { title: "Open 7+ days", numeric: true, value: (g) => (g.stuck ? flagged(number(g.stuck)) : "–") },
+  ];
+  const projectColumns = [
+    { title: "Project", wrap: true, value: (r) => [linkButton(r.key, () => setProject(r.info.name)), r.info.projects.size && r.info.repos.size ? el("div", { class: "sub" }, [...r.info.repos].map(repoName).join(", ")) : null] },
+    person ? null : { title: "Team", wrap: true, value: (r) => r.team.slice(0, MIX_SHOWN).join(", ") + (r.team.length > MIX_SHOWN ? ` +${r.team.length - MIX_SHOWN}` : "") },
+    { title: "Last active", value: (r) => (r.last ? formatDay(r.last, { day: "numeric", month: "short" }) : "–") },
+    { title: "Logged", numeric: true, value: (r) => dash(hours(r.logged), r.logged) },
+    { title: "Hands-on AI", numeric: true, help: "An estimate from log timestamps: the time around typed prompts.", value: (r) => (r.time ? hours(r.time.handsOn) : "–") },
+    ...outcomeColumns,
+  ].filter(Boolean);
+  const personColumns = [
+    { title: "Person", value: (g) => linkButton(personLabel(g.key), () => choosePerson(g.key)) },
+    project ? null : { title: "Projects", wrap: true, value: (g) => projectsOf(g.key) },
+    { title: "Tokens", numeric: true, help: "Input plus output, from laptops that report. Cache tokens aren't counted. A dash means no tokens in this selection. Their laptop may not be reporting, so it doesn't mean no use.", value: (g) => dash(compact(g.tokens), g.sessions.size) },
+    { title: "Logged", numeric: true, value: (g) => (personLog.has(g.key) ? hours(personLog.get(g.key).hours) : "–") },
+    { title: "Hands-on AI", numeric: true, help: "An estimate from log timestamps: the time around typed prompts.", value: (g) => (personTime.has(g.key) ? hours(personTime.get(g.key).handsOn) : "–") },
+    ...outcomeColumns,
+    { title: "Tokens per logged hour", numeric: true, help: "Tokens divided by hours logged in solidtime, both counted only from the first to the last day the person's laptops reported, so it can use less than the Tokens and Logged columns. A laptop that was off part-way through still counts those days. Not a productivity score. A dash means a tool or model is chosen, no tokens or hours fall in those days, or we can't tell when their laptops reported. Tokens can include repos that time isn't logged against, so read it as a rough guide.", value: (g) => { const r = tokensPerReportedHour(usage, log, data.machines, g.key, { model, tool }); return r === null ? "–" : compact(r); } },
+  ].filter(Boolean);
+
+  const workColumn = (title, field) => ({ title, numeric: true, value: (g) => dash(number(g[field]), g.commits + g.branch) });
+  const workColumns = [
+    workColumn("Commits", "commits"), workColumn("Marked AI", "marked"), workColumn("AI nearby", "nearby"), workColumn("No AI seen", "noAi"), workColumn("Can't tell", "unknown"), workColumn("On other branches", "branch"),
+    { title: "Lines committed", numeric: true, value: (g) => dash(number(g.linesCommitted), g.commits) },
+    { title: "Lines with no AI seen", numeric: true, value: (g) => dash(number(g.noAiLines), g.commits) },
+  ];
+  const timeColumns = (time) => [
+    { title: "AI running", numeric: true, value: (g) => (time.has(g.key) ? hours(time.get(g.key).running) : "–") },
+    { title: "Hands-on", numeric: true, value: (g) => (time.has(g.key) ? hours(time.get(g.key).handsOn) : "–") },
+    { title: "Worktrees", numeric: true, value: (g) => (time.get(g.key)?.folders.size ? number(time.get(g.key).worktrees.size) : "–") },
+    { title: "In 2+ folders at once", numeric: true, value: (g) => (time.get(g.key)?.folders.size ? hours(time.get(g.key).parallel) : "–") },
+  ];
+  const usageColumns = [
+    { title: "Sessions", numeric: true, value: (g) => dash(number(g.sessions.size), g.sessions.size) },
+    { title: "Tokens", numeric: true, value: (g) => dash(compact(g.tokens), g.sessions.size) },
+    { title: "Lines by tool", numeric: true, value: (g) => dash(number(g.lines), g.hasLines) },
+  ];
+  const mergeSpeed = { title: "Median days to merge", numeric: true, value: (g) => dash(median(g.mergeDays)?.toFixed(1), g.merged) };
+  const name = { title: "Person", value: (g) => g.key };
+  const logColumns = [
+    { title: "Logged", numeric: true, value: (g) => (personLog.has(g.key) ? hours(personLog.get(g.key).hours) : "–") },
+    { title: "Days on leave", numeric: true, value: (g) => (leaveKnown ? number(leaveFor(g).days) : "–") },
+    { title: "Worked on full leave days", numeric: true, value: (g) => (leaveKnown ? number(leaveFor(g).workedOn) : "–") },
+  ];
+
+  // Headline numbers, the same whether looking at everyone, a project or a person. No single score: the mix of projects differs too much for one number to compare people fairly.
+  const sumOf = (read) => [...read].reduce((sum, n) => sum + n, 0);
+  const totalLogged = sumOf([...personLog.values()].map((p) => p.hours));
+  const totalHandsOn = sumOf([...personTime.values()].map((t) => t.handsOn)), totalRunning = sumOf([...personTime.values()].map((t) => t.running));
+  const split = [[total.branch, "on other branches"], [total.marked, "marked AI"], [total.nearby, "AI nearby"], [total.noAi, "no AI seen"], [total.unknown, "can't tell"]].filter(([n]) => n).map(([n, label]) => `${number(n)} ${label}`).join(" · ");
+  const off = person ? personLeave.get(person) : null;
+  const loggedDays = new Set(log.map((t) => t.day)).size;
+  const mergeMedian = median(total.mergeDays);
+  const oldest = stuck.length ? Math.floor((Date.now() - new Date(stuck[0].created_at).getTime()) / DAY_MS) : 0;
+  const tokenPeople = byPerson.filter((g) => g.sessions.size).sort((a, b) => a.key.localeCompare(b.key));
+  const noTokens = byPerson.filter((g) => !g.sessions.size && !FORMER_PEOPLE.has(g.key)).map((g) => g.key).sort();
+  const tokensBlock = el("div", { style: "margin-top:12px" },
+    // By name, not by amount: DESIGN.md says not to rank people by one number.
+    person ? null : el("ul", { class: "chips" }, tokenPeople.map((g) => el("li", {}, linkButton(personLabel(g.key), () => choosePerson(g.key)), " ", el("b", {}, compact(g.tokens))))),
+    el("p", { class: "note" }, `Tokens are input plus output, from laptops that report. Cache tokens aren't counted.${project ? "" : " Personal repos and sessions with no repo are included."}${noTokens.length ? ` No tokens in this selection for ${noTokens.join(", ")}. A laptop may not be reporting, so this doesn't mean no use.` : ""}`));
+  const tiles = el("div", { class: "tiles" },
+    tile("Tokens", total.sessions.size ? compact(total.tokens) : "–", total.sessions.size ? (person ? plural(total.sessions.size, "session") : `${people(tokenPeople.length)} with tokens`) : "None reported"),
+    tile("Logged", totalLogged ? hours(totalLogged) : "–", totalLogged ? `${plural(loggedDays, "day")}${off?.days ? ` · ${number(off.days)} on leave` : ""}` : "No time logged"),
+    tile("Hands-on AI", personTime.size ? hours(totalHandsOn) : "–", personTime.size ? `${hours(totalRunning)} AI running` : "No hours reported yet"),
+    tile("Commits", number(total.commits), split || "None on the default branch"),
+    tile("PRs merged", number(total.merged), mergeMedian === null ? null : `Median ${mergeMedian.toFixed(1)} days to merge`),
+    tile("No review", percent(total.unreviewed, total.merged), total.merged ? `${percent(total.humanReviewed, total.merged)} reviewed by a person · ${claudeReviewLine(total)}` : null),
+    tile("Open 7+ days", number(stuck.length), stuck.length ? `Oldest is ${plural(oldest, "day")} old` : "None stuck", stuck.length > 0));
+
+  // What a PM would act on. Each line names who or what, so the next step is obvious.
+  const issues = [];
+  if (syncedAt && Date.now() - new Date(syncedAt).getTime() > GIT_STALE_MS) issues.push(el("li", {}, flagged(`Git data is out of date: last uploaded ${stamp(syncedAt)}.`)));
+  if (stuck.length) issues.push(el("li", {}, el("b", {}, `${plural(stuck.length, "PR")} open over 7 days`), el("a", { href: "#stuck" }, "See the list")));
+  const unreviewed = projectRows.filter((r) => r.unreviewed).sort((a, b) => b.unreviewed - a.unreviewed);
+  if (total.unreviewed) issues.push(el("li", {}, el("b", {}, `${number(total.unreviewed)} of ${number(total.merged)} merged PRs had no review`), project ? null : chips(unreviewed.map((r) => linkButton(`${r.key} (${number(r.unreviewed)})`, () => setProject(r.info.name))))));
+  const current = byPerson.filter((g) => !FORMER_PEOPLE.has(g.key));
+  const leaveWork = current.filter((g) => leaveFor(g).workedOn);
+  if (leaveWork.length) issues.push(el("li", {}, el("b", {}, person ? `Work on ${plural(leaveFor(leaveWork[0]).workedOn, "full leave day")}` : `${people(leaveWork.length)} with work on full leave days`), person ? null : chips(leaveWork.map((g) => linkButton(`${g.key} (${number(leaveFor(g).workedOn)})`, () => choosePerson(g.key))))));
+  const reportingNames = new Set(allUsage.map((u) => u.developer));
+  const installedNames = new Set(machines.map((m) => m.developer));
+  const missing = [...new Set(teamPrs.map((pr) => pr.person))].filter((n) => !reportingNames.has(n) && !installedNames.has(n) && !FORMER_PEOPLE.has(n)).sort();
+  if (missing.length && !person) issues.push(el("li", {}, el("b", {}, `${people(missing.length)} with recent PRs ${missing.length === 1 ? "isn't" : "aren't"} reporting`), chips(missing.map((n) => linkButton(n, () => choosePerson(n)))), el("span", { class: "sub" }, "That means no data, not no AI use.")));
+  const shownMachines = machines.filter((m) => !person || m.developer === person);
+  const brokenLaptops = shownMachines.filter((m) => collectorIssues(m, latestVersion).length);
+  if (brokenLaptops.length) issues.push(el("li", {}, el("b", {}, `${plural(brokenLaptops.length, "laptop")} ${brokenLaptops.length === 1 ? "needs" : "need"} attention`), linkButton("See laptops", () => openFold("fold-laptops")), el("span", { class: "sub" }, "Their numbers may be low until fixed.")));
+
+  const offServer = offServerWork(commits, teamPrs);
+  const ageOf = (at) => Math.floor((Date.now() - new Date(at).getTime()) / DAY_MS);
+  const lateOff = offServer.filter((r) => ageOf(r.first) > STUCK_DAYS && !FORMER_PEOPLE.has(r.person));
+  if (lateOff.length) {
+    const lateBy = new Map();
+    lateOff.forEach((r) => lateBy.set(r.person, (lateBy.get(r.person) ?? 0) + 1));
+    issues.unshift(el("li", {}, el("b", {}, `${number(lateOff.length)} ${lateOff.length === 1 ? "branch" : "branches"} with work not on a server for over 7 days`), person ? null : chips([...lateBy].sort((a, b) => b[1] - a[1]).map(([name, n]) => linkButton(`${name} (${number(n)})`, () => choosePerson(name)))), el("a", { href: "#off-server" }, "See the list")));
+  }
+  const serverRows = projectRows.filter((r) => r.onMain + r.onDevelop + r.offServer + r.unknownStage);
+  // Distinct secrets per person. The same secret on two laptops counts twice, because fingerprints are salted per laptop.
+  const secretRows = secrets.findings.filter((f) => inProject(f.repo) && (!person || f.person === person));
+  const secretsBy = (keyOf) => {
+    const groups = new Map();
+    for (const f of secretRows) {
+      const group = groups.get(keyOf(f)) ?? groups.set(keyOf(f), { key: keyOf(f), person: f.person, type: f.type, prints: new Set(), repos: new Set(), times: 0, last: "" }).get(keyOf(f));
+      group.prints.add(f.fingerprint);
+      group.repos.add(f.repo);
+      group.times += f.times;
+      if (f.last > group.last) group.last = f.last;
+    }
+    return [...groups.values()].sort((a, b) => b.prints.size - a.prints.size || b.times - a.times);
+  };
+  const secretPeople = secretsBy((f) => f.person);
+  const secretCount = secretPeople.reduce((sum, g) => sum + g.prints.size, 0);
+  if (secretCount) issues.unshift(el("li", {}, el("b", {}, `${secrets.partial ? "At least " : ""}${number(secretCount)} possible ${secretCount === 1 ? "secret" : "secrets"} in AI sessions`), person ? null : chips(secretPeople.map((g) => linkButton(`${g.person} (${number(g.prints.size)})`, () => choosePerson(g.person)))), linkButton("See details", () => openFold("fold-secrets"))));
+
+  $("content").replaceChildren(el("div", { class: "below" },
+    el("section", {},
+      el("div", { class: "range" }, el("h2", {}, heading), el("p", {}, rangeTitle), person || project ? linkButton("Back to all projects", () => { $("developer").value = ""; $("repo").value = ""; render(); }) : null),
+      tiles,
+      tokensBlock),
+    el("section", {},
+      el("h2", {}, "Needs attention"),
+      issues.length ? el("ul", { class: "attention" }, issues) : el("p", { class: "sub" }, "Nothing right now.")),
+    serverRows.length ? el("section", {},
+      el("h2", {}, "Has the work reached a server?"),
+      el("p", { class: "note" }, "Commits on main or master, on develop or stage, and on branches that haven't reached either. A branch merged by PR isn't counted here. Commits pushed nowhere only show if a laptop reports them, under Can't tell."),
+      table([
+        { title: "Project", wrap: true, value: (r) => linkButton(r.key, () => setProject(r.info.name)) },
+        { title: "main / master", numeric: true, value: (r) => dash(number(r.onMain), r.onMain) },
+        { title: "develop / stage", numeric: true, value: (r) => dash(number(r.onDevelop), r.onDevelop) },
+        { title: "Not on a server", numeric: true, help: "Commits only on other branches on GitHub.", value: (r) => (r.offServer ? flagged(number(r.offServer)) : "–") },
+        { title: "Can't tell", numeric: true, help: "Reported by a laptop, which can't say which branch. Most client repos land here.", value: (r) => dash(number(r.unknownStage), r.unknownStage) },
+        { title: "Last on a server", value: (r) => (r.lastServer ? formatDay(r.lastServer, { day: "numeric", month: "short" }) : "–") },
+      ], serverRows),
+      offServer.length ? el("h3", { id: "off-server", style: "margin-top:22px" }, "Work not on a server yet") : null,
+      offServer.length ? table([
+        { title: "Branch", wrap: true, value: (r) => [el("a", { href: `https://github.com/${r.repo}/tree/${r.branch.split("/").map(encodeURIComponent).join("/")}`, rel: "noopener noreferrer" }, r.branch), el("div", { class: "sub" }, repoName(r.repo))] },
+        { title: "Person", value: (r) => personLabel(r.person) },
+        { title: "Commits", numeric: true, value: (r) => number(r.commits) },
+        { title: "Oldest commit", numeric: true, value: (r) => `${plural(ageOf(r.first), "day")} ago` },
+        { title: "Latest commit", numeric: true, value: (r) => `${plural(ageOf(r.last), "day")} ago` },
+        { title: "Open PR", value: (r) => (r.pr ? el("a", { href: `https://github.com/${r.repo}/pull/${r.pr}`, rel: "noopener noreferrer" }, `#${r.pr}`) : flagged("None")) },
+      ], showAllOffServer ? offServer : offServer.slice(0, OFF_SERVER_SHOWN)) : null,
+      offServer.length > OFF_SERVER_SHOWN ? el("p", {}, linkButton(showAllOffServer ? "Show fewer" : `Show all ${number(offServer.length)}`, () => { showAllOffServer = !showAllOffServer; render(); })) : null) : null,
+    project ? null : el("section", {},
+      el("h2", {}, person ? "Their projects" : "Projects"),
+      projectRows.length ? table(projectColumns, projectRows) : el("p", { class: "sub" }, "Nothing in this selection.")),
+    person ? null : el("section", {},
+      el("h2", {}, project ? "Team on this project" : "People"),
+      byPerson.length ? table(personColumns, byPerson) : el("p", { class: "sub" }, "Nothing in this selection.")),
+    harnessSection(usage, commits, machines, data.harness ?? []),
+    stuck.length ? el("section", { id: "stuck" },
+      el("h2", {}, "PRs open over 7 days"),
+      table([
+        { title: "Pull request", value: (pr) => el("a", { href: `https://github.com/${pr.repo}/pull/${pr.number}`, rel: "noopener noreferrer" }, `${repoName(pr.repo)} #${pr.number}`) },
+        { title: "Opened by", value: (pr) => pr.person },
+        { title: "Days open", numeric: true, value: (pr) => number(Math.floor((Date.now() - new Date(pr.created_at).getTime()) / DAY_MS)) },
+      ], stuck)) : null,
+    el("section", {},
+      el("h2", {}, "Activity by day"),
+      el("div", { class: `days${selectedDay ? " open" : ""}` },
+        el("div", {}, calendar(usage, commits, log, leave, teamUsage, cutoff)),
+        selectedDay ? dayDetail(usage, commits, log, leave, timeRows) : null)),
+    person ? timelineSection(person, timeRows, commits, log, leave) : null,
+    activeHours(timeRows),
+    el("section", { class: "folds" },
+      fold("fold-commits", "Commit breakdown, including work with no AI seen", table([name, ...workColumns], byPerson)),
+      fold("fold-log", "Logged time", table([name, ...logColumns], byPerson)),
+      fold("fold-ai", "AI usage",
+        table([name, ...timeColumns(personTime), { title: "Prompts", numeric: true, value: (g) => (personTime.has(g.key) ? number(personTime.get(g.key).prompts) : "–") }, { title: "Days active", numeric: true, value: (g) => dash(number(g.days.size), g.days.size) }, ...usageColumns, { title: "Model mix", value: modelMix }, { title: "On older models", numeric: true, value: (g) => dash(percent(olderTokens(g), g.tokens), g.sessions.size) }, mergeSpeed, { title: "Tokens per merged PR", numeric: true, value: (g) => dash(compact(g.tokens / g.merged), g.merged && g.sessions.size) }, { title: "Hands-on hours per merged PR", numeric: true, value: (g) => (personTime.has(g.key) && g.merged ? hours(personTime.get(g.key).handsOn / g.merged) : "–") }], byPerson)),
+      fold("fold-repos", "By repository",
+        table([{ title: "Repository", value: (g) => repoName(g.key) }, ...workColumns, ...timeColumns(repoTime), ...usageColumns, { title: "Merged PRs", numeric: true, value: (g) => dash(number(g.merged), g.merged) }, { title: "No review", numeric: true, value: (g) => percent(g.unreviewed, g.merged) }, mergeSpeed, { title: "Open over 7 days", numeric: true, value: (g) => dash(number(g.stuck), g.stuck) }], byRepo)),
+      fold("fold-models", "Models and tool versions",
+        byModel.length ? [
+          el("p", { class: "note" }, `${percent(olderTokens(total), total.tokens)} of tokens went to older Claude models, meaning not the current Opus, Sonnet, Haiku or Fable. Codex models aren't judged.`),
+          table([
+            { title: "Model", value: (g) => modelLabel(g.key.split("\n")[1]) },
+            { title: "Tool", value: (g) => toolLabel(g.key.split("\n")[0]) },
+            { title: "People", numeric: true, value: (g) => number(g.people.size) },
+            { title: "Sessions", numeric: true, value: (g) => number(g.sessions.size) },
+            { title: "Tokens", numeric: true, value: (g) => compact(g.tokens) },
+            { title: "Share of tokens", numeric: true, value: (g) => percent(g.tokens, total.tokens) },
+            { title: "Lines by tool", numeric: true, value: (g) => dash(number(g.lines), g.hasLines) },
+          ], byModel)] : null,
+        olderUse.length ? table([
+          { title: "On an older model", value: (r) => r.person },
+          { title: "Model", value: (r) => r.model },
+          { title: "Sessions", numeric: true, value: (r) => number(r.sessions.size) },
+          { title: "Tokens", numeric: true, value: (r) => compact(r.tokens) },
+          { title: "Last used", value: (r) => formatDay(r.last, { day: "numeric", month: "short" }) },
+        ], olderUse) : null,
+        toolVersions.length ? table([
+          { title: "Person", value: (r) => r.person },
+          { title: "Tool", value: (r) => toolLabel(r.tool) },
+          { title: "Version", help: "The version each person used most recently. Behind means older than the newest anyone here used.", value: (r) => (r.behind ? flagged(`${r.version}, behind`) : r.version) },
+          { title: "Last used", value: (r) => formatDay(r.day, { day: "numeric", month: "short" }) },
+        ], toolVersions) : null),
+      fold("fold-secrets", "Possible secrets in AI sessions",
+        el("p", { class: "note" }, "From typed prompts, AI responses and commands. The values were removed on the laptop before upload, so they can't be shown here: ask the person to rotate any that are real. Some may be false matches, especially connection-password and assigned-secret. Only recognised formats are caught."),
+        secrets.state === "error" ? el("p", { class: "message error" }, "Could not load the findings. Reload the page to try again.") : secrets.partial ? el("p", { class: "sub" }, "Too many to load at once, so this shows the most recent for each person, and counts may be low.") : null,
+        secretPanel(),
+        secretRows.length ? table([
+          { title: "Person", value: (g) => personLabel(g.person) },
+          { title: "Type", value: (g) => g.type },
+          { title: "Distinct", numeric: true, help: "Different secrets. The same one on two laptops counts twice.", value: (g) => number(g.prints.size) },
+          { title: "Times seen", numeric: true, value: (g) => number(g.times) },
+          { title: "Last seen", value: (g) => formatDay(g.last, { day: "numeric", month: "short" }) },
+          { title: "Projects", wrap: true, value: (g) => [...new Set([...g.repos].map(repoName))].join(", ") },
+          data.canReadPrompts ? { title: "Where", value: (g) => linkButton("See where", () => openSecretContext(g.person, g.type)) } : null,
+        ].filter(Boolean), secretsBy((f) => `${f.person}\n${f.type}`)) : secrets.state === "ready" ? el("p", { class: "sub" }, "None found in this selection.") : null),
+      fold("fold-laptops", "Laptops",
+        shownMachines.length ? table([
+          { title: "Person", value: (m) => m.developer },
+          { title: "Machine", value: (m) => m.machine },
+          { title: "OS", value: (m) => m.os ?? "–" },
+          { title: "Version", value: (m) => m.version ?? "–" },
+          { title: "Last report", value: (m) => stamp(m.last_seen) },
+          { title: "Status", value: (m) => { const found = collectorIssues(m, latestVersion); return found.length ? el("span", { class: "warn" }, warningIcon(), found.join("; ")) : "Reporting"; } },
+        ], [...shownMachines].sort((a, b) => collectorIssues(b, latestVersion).length - collectorIssues(a, latestVersion).length || a.developer.localeCompare(b.developer))) : el("p", { class: "sub" }, person ? "No laptop has reported for this person." : "No laptops have reported yet.")),
+      fold("fold-help", "How these numbers work", glossary(syncedAt, leaveSynced)))));
+}
+
+async function loadSecrets() {
+  const days = $("days").value;
+  try {
+    const response = await fetch(`/api/dashboard?part=findings&days=${encodeURIComponent(days)}`);
+    if (!response.ok) throw new Error(String(response.status));
+    const found = await response.json();
+    if ($("days").value === days) secrets = { state: "ready", ...found };
+  } catch {
+    if ($("days").value === days) secrets = { state: "error", findings: [], partial: false };
+  }
+  if (data) render();
+}
+
+async function load(background = false) {
+  const content = $("content");
+  if (!background) content.classList.add("loading");
+  try {
+    const response = await fetch(`/api/dashboard?days=${encodeURIComponent($("days").value)}`);
+    if (!response.ok) throw new Error(`The server answered ${response.status}`);
+    data = await response.json();
+    classifyCommits(data.commits, data.usage, data.machines);
+    if (!background) selectedDay = null;
+    render();
+    if (!background) loadSecrets();
+  } catch (error) {
+    // A failed refresh keeps the last good view on screen.
+    if (!background) content.replaceChildren(el("p", { class: "message error" }, `Could not load the data. ${error.message}. Reload the page to try again.`));
+  }
+  content.classList.remove("loading");
+}
+
+$("days").addEventListener("change", () => load());
+setInterval(() => { if (!document.hidden) load(true); }, REFRESH_MS);
+["tool", "model", "repo", "developer"].forEach((id) => $(id).addEventListener("change", render));
+// The popover is fixed to the window, so it would drift away from its column on scroll.
+addEventListener("scroll", () => document.querySelectorAll(".tip-text:popover-open").forEach((tip) => tip.hidePopover()), true);
+addEventListener("keydown", (event) => { if (event.key === "Escape" && selectedDay) { selectedDay = null; render(); } });
+load();
+</script>
+</body>
+</html>
