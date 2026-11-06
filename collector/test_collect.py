@@ -520,7 +520,9 @@ class Remotes(unittest.TestCase):
             self.assertNotIn("tok", collect.parse_remote(url))
 
     def test_an_ssh_alias_for_github_counts_as_github(self):
-        self.assertEqual(collect.parse_remote("git@github-work:Your-Org/App.git"), "your-org/app")
+        for url in ("git@github-work:Your-Org/App.git", "git@github.com-work:your-org/app.git", "git@github.com-my-alias:your-org/app"):
+            self.assertEqual(collect.parse_remote(url), "your-org/app", url)
+        self.assertEqual(collect.parse_remote("git@github.example.com:acme/app.git"), "github.example.com-acme/app")
 
     def test_local_paths_arent_repos(self):
         for url in ("/local/path", "../sibling.git", "file:///srv/app.git", "C:\\repos\\app", ""):

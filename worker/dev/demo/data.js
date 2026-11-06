@@ -79,7 +79,7 @@ function demoData(days, now = Date.now()) {
   const cutoff = days > 0 ? dayAt(days - 1) : "0000-00-00";
   const since = (rows, of) => rows.filter((row) => of(row) >= cutoff);
   return {
-    cutoff, git: [], machines, harness,
+    cutoff, orgs: ["demo"], git: [], machines, harness,
     usage: since(usage, (u) => u.day), timeLog: since(timeLog, (t) => t.day), leave: since(leave, (l) => l.day),
     commits: since(commits, (c) => c.authored_at.slice(0, 10)),
     pullRequests: pullRequests.filter((pr) => !pr.merged_at || pr.merged_at.slice(0, 10) >= cutoff),

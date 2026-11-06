@@ -25,18 +25,19 @@ const member = {
 
 test("starts the upload workflow on main, and fails loudly otherwise", async () => {
   let call;
-  await startGitUpload("tok", async (url, options) => { call = { url, ...options }; return new Response(null, { status: 204 }); });
+  await startGitUpload("tok", "your-org/ai-work-almanac", async (url, options) => { call = { url, ...options }; return new Response(null, { status: 204 }); });
   assert.match(call.url, /\/repos\/your-org\/ai-work-almanac\/actions\/workflows\/nightly\.yml\/dispatches$/);
   assert.equal(call.method, "POST");
   assert.equal(call.headers.authorization, "Bearer tok");
   assert.deepEqual(JSON.parse(call.body), { ref: "main" });
-  await assert.rejects(startGitUpload("tok", async () => new Response(null, { status: 403 })), /403/);
-  await assert.rejects(startGitUpload(undefined, async () => assert.fail("must not call GitHub")), /GIT_UPLOAD_TOKEN/);
+  await assert.rejects(startGitUpload("tok", "your-org/ai-work-almanac", async () => new Response(null, { status: 403 })), /403/);
+  await assert.rejects(startGitUpload(undefined, "your-org/ai-work-almanac", async () => assert.fail("must not call GitHub")), /GIT_UPLOAD_TOKEN/);
+  for (const repo of [undefined, "", "your-org", "your-org/a/b", "../x/y"]) await assert.rejects(startGitUpload("tok", repo, async () => assert.fail("must not call GitHub")), /UPLOAD_REPO/);
 });
 
 test("can start the status workflow instead", async () => {
   let url;
-  await startGitUpload("tok", async (u) => { url = u; return new Response(null, { status: 204 }); }, "status.yml");
+  await startGitUpload("tok", "your-org/ai-work-almanac", async (u) => { url = u; return new Response(null, { status: 204 }); }, "status.yml");
   assert.match(url, /\/actions\/workflows\/status\.yml\/dispatches$/);
 });
 
@@ -85,9 +86,7 @@ test("reports a GitHub outage as temporary instead of denying membership", async
   await assert.rejects(githubIdentity("gho_x", ["your-org"], github({ ...member, "/user/memberships/orgs/your-org": () => reply({}, 503) })), { status: 502 });
 });
 
-test("a github SSH alias in an older laptop's repo name counts as our org's repo", () => {
-  assert.equal(currentRepo("github.com-work-your-org/example-app"), "your-org/example-app");
-  assert.equal(currentRepo("github-work-your-org/example-app"), "your-org/example-app");
+test("renamed repos take their current name and others keep theirs", () => {
   assert.equal(currentRepo("your-org/example-app"), "your-org/example-app");
   assert.equal(currentRepo("your-org/example-app-legacy"), "your-org/example-app");
   assert.equal(currentRepo("gitlab.com-your-org/example-app"), "gitlab.com-your-org/example-app");

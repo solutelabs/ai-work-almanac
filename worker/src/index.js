@@ -210,7 +210,7 @@ async function sendDigest(env, sql) {
   const leaveDays = await sql`SELECT person, day, portion FROM tracker.leave WHERE day >= ${weekStart}`;
   const machines = await sql`SELECT d.name AS developer, m.version, m.last_seen FROM tracker.machines m JOIN tracker.developers d ON d.id = m.developer_id WHERE d.revoked_at IS NULL`;
   const named = (rows) => rows.map((r) => ({ ...r, repo: currentRepo(r.repo) }));
-  const text = buildDigest({ now: Date.now(), dashboardUrl: env.DASHBOARD_URL, weekStart, commits: named(commits), usageDays: named(usageDays), loggedDays, leaveDays, machines });
+  const text = buildDigest({ now: Date.now(), dashboardUrl: env.DASHBOARD_URL, weekStart, commits: named(commits), usageDays: named(usageDays), loggedDays, leaveDays, machines, leftOutRepos: [env.UPLOAD_REPO ?? ""] });
   const response = await fetch(env.SLACK_DIGEST_WEBHOOK, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) });
   if (!response.ok) throw new Error(`Slack answered ${response.status}`);
   await logAccess(env, "weekly digest sent");
@@ -425,7 +425,7 @@ async function revokeDeveloper(request, sql) {
   return result.count ? json({ ok: true }) : json({ error: "no developer with that email" }, 404);
 }
 
-async function dashboardData(url, sql, canReadPrompts) {
+async function dashboardData(url, sql, canReadPrompts, orgs) {
   const requested = Number.parseInt(url.searchParams.get("days") ?? "90", 10);
   const cutoff = cutoffDay(Number.isInteger(requested) ? requested : 90);
   const usage = await sql`SELECT u.day, d.name AS developer, u.tool, u.repo, u.model, u.session, SUM(u.lines_added) AS added,
@@ -440,7 +440,7 @@ async function dashboardData(url, sql, canReadPrompts) {
     WHERE merged_at IS NULL OR merged_at >= ${cutoffInstant(cutoff)}`;
   // One row per commit, because a repo mirrored to a second host has the same commit under both names.
   const commits = await sql`SELECT DISTINCT ON (oid) repo, person, authored_at, ai, lines_added, lines_removed, on_default, branch FROM tracker.commits
-    WHERE authored_at >= ${cutoffInstant(cutoff)} ORDER BY oid, on_default DESC, (repo LIKE 'your-org/%') DESC, repo`;
+    WHERE authored_at >= ${cutoffInstant(cutoff)} ORDER BY oid, on_default DESC, (split_part(repo, '/', 1) IN ${sql(orgs)}) DESC, repo`;
   const timeLog = await sql`SELECT day, person, project, seconds, repos FROM tracker.time_log WHERE day >= ${cutoff}`;
   const leave = await sql`SELECT day, person, portion, synced_at FROM tracker.leave WHERE day >= ${cutoff}`;
   const machines = await sql`SELECT d.name AS developer, m.machine, m.os, m.version, m.last_seen, m.parse_errors, m.bad_lines,
@@ -449,16 +449,16 @@ async function dashboardData(url, sql, canReadPrompts) {
       (SELECT MIN(u.day) FROM tracker.usage u WHERE u.developer_id = m.developer_id AND u.machine = m.machine AND u.ist AND u.active_slots IS NOT NULL) AS first_ist_day FROM tracker.machines m JOIN tracker.developers d ON d.id = m.developer_id WHERE d.revoked_at IS NULL`;
   const harness = await sql`SELECT d.name AS developer, h.machine, h.repo, h.plugin, h.plugin_version, h.hooks FROM tracker.harness h
     JOIN tracker.developers d ON d.id = h.developer_id WHERE d.revoked_at IS NULL`;
-  return json({ canReadPrompts, cutoff, usage: usage.map((u) => ({ ...u, repo: currentRepo(u.repo) })), git, commits: commits.map((c) => ({ ...c, repo: currentRepo(c.repo) })), timeLog, leave, pullRequests, machines, harness });
+  return json({ canReadPrompts, cutoff, orgs, usage: usage.map((u) => ({ ...u, repo: currentRepo(u.repo) })), git, commits: commits.map((c) => ({ ...c, repo: currentRepo(c.repo) })), timeLog, leave, pullRequests, machines, harness });
 }
 
 export default {
   // GitHub's own schedule never fired for this repo, so Cloudflare starts the upload instead.
   async scheduled(controller, env, ctx) {
-    if (controller.cron !== DIGEST_CRON) return startGitUpload(env.GIT_UPLOAD_TOKEN);
+    if (controller.cron !== DIGEST_CRON) return startGitUpload(env.GIT_UPLOAD_TOKEN, env.UPLOAD_REPO);
     // The digest and the status post are independent: one failing must not stop the other.
     await settleAll([
-      startGitUpload(env.GIT_UPLOAD_TOKEN, fetch, "status.yml"),
+      startGitUpload(env.GIT_UPLOAD_TOKEN, env.UPLOAD_REPO, fetch, "status.yml"),
       (async () => {
         const sql = connect(env);
         try {
@@ -522,7 +522,7 @@ export default {
         if (route === "GET /api/dashboard" && url.searchParams.get("part") === "findings") return await dashboardFindings(url, env);
         if (route === "GET /api/dashboard" && url.searchParams.get("part") === "secret-context") return await dashboardSecretContext(url, env, sql, promptReader(request, env));
         if (route === "GET /api/dashboard" && url.searchParams.get("part") === "prompts") return await dashboardPrompts(url, env, sql, promptReader(request, env));
-        if (route === "GET /api/dashboard") return await dashboardData(url, sql, Boolean(promptReader(request, env)));
+        if (route === "GET /api/dashboard") return await dashboardData(url, sql, Boolean(promptReader(request, env)), allowedOrgs(env));
         return new Response(page, {
           headers: {
             "content-type": "text/html; charset=utf-8",

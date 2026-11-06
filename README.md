@@ -75,7 +75,7 @@ npx wrangler secret put ADMIN_TOKEN
 npx wrangler secret put GIT_UPLOAD_TOKEN   # fine-grained GitHub token: this repo only, Actions read and write
 ```
 
-Change `UPLOAD_REPO` in `worker/src/github.js` to the repo that holds this code, so the Worker's cron can start the git upload.
+Set `UPLOAD_REPO` in `wrangler.jsonc` to your copy of this repo (`owner/name`). The Worker's cron starts the git upload there, and the weekly digest ignores activity in it.
 
 ### 3. GitHub sign-in for laptops
 
@@ -119,6 +119,21 @@ Or set `DEFAULT_URL` in `collect.py` to your host and drop `--url`. The install 
 The collector updates itself from the Worker on its hourly run. Bump `VERSION` in `collect.py` to ship a new one.
 
 Check it with `python3 ~/.pulse-tracker/collect.py status`. Remove it with `python3 ~/.pulse-tracker/collect.py uninstall`.
+
+### 7. Settings kept in code
+
+Everything else that's specific to your team is a constant you edit before deploying:
+
+| Setting | Where | What it does |
+|---|---|---|
+| `INSTALL_NOTICE` | `collector/collect.py` | What laptops are told is collected. Name who reads prompts |
+| `DEFAULT_URL` | `collector/collect.py` | Your Worker's address, so installs don't need `--url` |
+| `HARNESS_PLUGIN` | `collector/collect.py` | Your team's Claude Code plugin, as `plugin@marketplace`, if you have one |
+| `LEFT_OUT` | `worker/src/digest.js` | People the weekly digest never names |
+| `REPO_RENAMES` | `worker/src/repo_renames.js` | Old repo names to merge into current ones |
+| `people.json`, `solidtime_projects.json` | repo root | Who is who, and which repos each solidtime project covers |
+
+Days and times are in India Standard Time (IST, UTC+5:30): the dashboard, the digest's Monday 09:30 send and the collector's day boundaries all use it.
 
 ## Other admin tasks
 

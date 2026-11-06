@@ -38,7 +38,7 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-VERSION = "0.10.0"
+VERSION = "0.10.1"
 PARSER_VERSION = 7  # bump when parsing changes, so every log is read again on the next run
 DEFAULT_URL = "https://pulse.example.com"
 GITHUB_DEVICE_URL = "https://github.com/login/device/code"
@@ -144,8 +144,8 @@ REMOTE_RE = re.compile(
 
 OTHER_REMOTE_RE = re.compile(r"^(?:[a-z][a-z0-9+.-]*://(?:[^@/]+@)?|[^@/\s]+@)([^/:\s]+)(?::\d+(?=/))?[:/](.+?)(?:\.git)?/?$", re.I)
 REPO_PART_RE = re.compile(r"^[\w.-]+$", re.A)
-# An SSH alias for GitHub, such as git@github-work:org/repo. shortcut: other aliases count as their own host, which only changes how the repo is named.
-GITHUB_ALIAS_RE = re.compile(r"^github[\w-]*$", re.I)
+# An SSH alias for GitHub, such as git@github-work:org/repo or git@github.com-work:org/repo. shortcut: other aliases count as their own host, which only changes how the repo is named.
+GITHUB_ALIAS_RE = re.compile(r"^github(?:\.com)?[\w-]*$", re.I)
 WORKTREE_SUFFIX = re.compile(r"-[0-9a-f]{4,}$")
 
 

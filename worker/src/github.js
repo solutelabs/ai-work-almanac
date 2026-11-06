@@ -1,6 +1,4 @@
 const API = "https://api.github.com";
-// The GitHub repo that holds .github/workflows/nightly.yml, which the cron starts. Change it to your copy.
-export const UPLOAD_REPO = "your-org/ai-work-almanac";
 
 export class EnrollError extends Error {
   constructor(message, status) {
@@ -17,10 +15,11 @@ export async function settleAll(tasks) {
   if (failed.length) throw failed[0].reason;
 }
 
-/** Asks GitHub Actions to run a workflow file (the git upload by default). Throwing makes the failure show in the Worker's logs. */
-export async function startGitUpload(token, fetcher = fetch, workflow = "nightly.yml") {
+/** Asks GitHub Actions in `repo` (owner/name) to run a workflow file (the git upload by default). Throwing makes the failure show in the Worker's logs. */
+export async function startGitUpload(token, repo, fetcher = fetch, workflow = "nightly.yml") {
   if (!token) throw new Error(`GIT_UPLOAD_TOKEN isn't set, so ${workflow} wasn't started`);
-  const response = await fetcher(`${API}/repos/${UPLOAD_REPO}/actions/workflows/${workflow}/dispatches`, {
+  if (!/^[\w.-]+\/[\w.-]+$/.test(repo ?? "")) throw new Error(`UPLOAD_REPO must be owner/name, so ${workflow} wasn't started`);
+  const response = await fetcher(`${API}/repos/${repo}/actions/workflows/${workflow}/dispatches`, {
     method: "POST",
     headers: { authorization: `Bearer ${token}`, accept: "application/vnd.github+json", "user-agent": "pulse-tracker" },
     body: JSON.stringify({ ref: "main" }),
