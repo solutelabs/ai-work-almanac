@@ -14,7 +14,6 @@ const ORG_NAMES = (read("../../wrangler.jsonc").match(/"ALLOWED_ORGS":\s*"([^"]+
 const SWAPS = [
   ["<title>Pulse</title>", "<title>Pulse demo: how a team works with AI</title>"],
   ["<h1>Pulse</h1>", "<h1>Pulse demo</h1>"],
-  ['r.startsWith("your-org/")', 'r.startsWith("demo/")'],
   ["Your org's repos come from GitHub. Client repos come from laptops", "The team's own repos come from GitHub. Others come from laptops"],
   ["They come from GitHub for your org's repos and from laptops for client repos.", "They come from GitHub for the team's own repos and from laptops for others."],
   ["They can include generated files on your org's repos.", "They can include generated files on the team's own repos."],
@@ -116,7 +115,7 @@ export function realTerms() {
     add(from);
     add(to);
   }
-  for (const key of ["GITHUB_CLIENT_ID", "ACCESS_TEAM", "ACCESS_AUD", "PROMPT_READERS"]) {
+  for (const key of ["GITHUB_CLIENT_ID", "ACCESS_TEAM", "ACCESS_AUD", "PROMPT_READERS", "UPLOAD_REPO"]) {
     const value = wrangler.match(new RegExp(`"${key}":\\s*"([^"]+)"`))?.[1];
     if (value) value.split(",").forEach(add);
   }

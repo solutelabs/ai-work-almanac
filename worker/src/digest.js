@@ -4,22 +4,22 @@ export const DIGEST_CRON = "0 4 * * 1"; // Monday 09:30 IST
 
 const DAY_MS = 86400000, IST_MS = 5.5 * 3600000, QUIET_DAYS = 2;
 // People the digest never names: those who don't log time, have left, or aren't one person (a shared bot account).
-// Use the names people.json gives them. The repos are ones whose activity shouldn't count, such as this tracker's own.
+// Use the names people.json gives them. Activity in leftOutRepos (this tracker's own, UPLOAD_REPO) doesn't count.
 const LEFT_OUT = new Set(["Example Manager", "sharedcoder (shared account)"]);
-const LEFT_OUT_REPOS = new Set(["your-org/ai-work-almanac"]);
 
 const safe = (text) => String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 const istDay = (at) => new Date(Date.parse(at) + IST_MS).toISOString().slice(0, 10);
 const byName = (a, b) => a.localeCompare(b);
 const days = (n) => `${n} ${n === 1 ? "day" : "days"}`;
 
-export function buildDigest({ now, dashboardUrl, weekStart, commits, usageDays, loggedDays, leaveDays, machines }) {
+export function buildDigest({ now, dashboardUrl, weekStart, commits, usageDays, loggedDays, leaveDays, machines, leftOutRepos = [] }) {
+  const leftOut = new Set(leftOutRepos.map((repo) => repo.toLowerCase()));
   const age = (at) => Math.floor((now - Date.parse(at)) / DAY_MS);
   const counts = (person) => !LEFT_OUT.has(person);
   const active = new Map(), logged = new Map();
   const add = (map, person, day) => { if (day >= weekStart && counts(person)) map.set(person, (map.get(person) ?? new Set()).add(day)); };
-  usageDays.filter((u) => !LEFT_OUT_REPOS.has(u.repo)).forEach((u) => add(active, u.person, u.day));
-  commits.filter((c) => !LEFT_OUT_REPOS.has(c.repo)).forEach((c) => add(active, c.person, istDay(c.authored_at)));
+  usageDays.filter((u) => !leftOut.has(u.repo)).forEach((u) => add(active, u.person, u.day));
+  commits.filter((c) => !leftOut.has(c.repo)).forEach((c) => add(active, c.person, istDay(c.authored_at)));
   loggedDays.forEach((l) => add(logged, l.person, l.day));
   const fullLeave = new Set(leaveDays.filter((l) => l.portion === 1).map((l) => `${l.person}\n${l.day}`));
   const onLaptop = new Set(machines.map((m) => m.developer));

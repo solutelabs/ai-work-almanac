@@ -199,7 +199,8 @@ const hours = (n) => `${n < 10 ? n.toFixed(1) : Math.round(n).toLocaleString()} 
 const plural = (n, word) => `${number(n)} ${word}${n === 1 ? "" : "s"}`;
 const people = (n) => `${number(n)} ${n === 1 ? "person" : "people"}`;
 // Your org's repos show the short name; others keep their org so client and personal repos stand out.
-const repoName = (r) => (r === "-/no-repo" ? "No repo" : r.startsWith("your-org/") ? r.split("/").pop() : r);
+// Your own orgs' repos (ALLOWED_ORGS) show without the org.
+const repoName = (r) => (r === "-/no-repo" ? "No repo" : data?.orgs?.includes(r.split("/")[0]) ? r.split("/").pop() : r);
 const COMPACT_WEEKS = 6, REFRESH_MS = 5 * 60000, GIT_STALE_MS = 2 * 3600000;
 const stamp = (at) => `${new Date(at).toLocaleString(undefined, { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "short" })} IST`;
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

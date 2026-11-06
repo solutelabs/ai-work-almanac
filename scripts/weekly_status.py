@@ -66,7 +66,7 @@ def get_pages(path, token, opener=urllib.request.urlopen):
     url, items = API + path, []
     while url:
         request = urllib.request.Request(url, headers={
-            "authorization": "Bearer " + token, "accept": "application/vnd.github+json", "user-agent": "your-org-status"})
+            "authorization": "Bearer " + token, "accept": "application/vnd.github+json", "user-agent": "pulse-status"})
         with opener(request, timeout=30) as response:
             items += json.load(response)
             next_link = re.search(r'<([^>]+)>;\s*rel="next"', response.headers.get("Link") or "")

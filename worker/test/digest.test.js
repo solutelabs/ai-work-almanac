@@ -29,7 +29,7 @@ test("doesn't flag someone whose logged days match their activity", () => {
 
 test("leaves out the listed people, the shared account, people who left, and this project", () => {
   const people = ["Example Manager", "sharedcoder (shared account)"];
-  const text = buildDigest({ ...base,
+  const text = buildDigest({ ...base, leftOutRepos: ["Your-Org/ai-work-almanac"],
     usageDays: [...people.map((person) => ({ person, day: "2026-11-03", repo })), { person: "Asha", day: "2026-11-03", repo: "your-org/ai-work-almanac" }],
     commits: [{ person: "Asha", repo: "your-org/ai-work-almanac", authored_at: "2026-11-03T05:00:00Z" }],
     loggedDays: people.map((person) => ({ person, day: "2026-11-04" })),

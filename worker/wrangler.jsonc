@@ -15,6 +15,9 @@
   "vars": {
     // GitHub orgs whose members may enroll a laptop, comma separated.
     "ALLOWED_ORGS": "your-org",
+    // The GitHub repo (owner/name) holding your copy of this code. The cron starts its .github/workflows/nightly.yml,
+    // and the weekly digest ignores activity in it.
+    "UPLOAD_REPO": "your-org/ai-work-almanac",
     // Client ID of your GitHub OAuth App, with Device Flow turned on. No client secret is needed.
     "GITHUB_CLIENT_ID": "Iv1.0000000000000000",
     // Emails that may read prompt text on the dashboard. Keep it to the people your install notice names.
